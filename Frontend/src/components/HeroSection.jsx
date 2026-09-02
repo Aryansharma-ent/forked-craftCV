@@ -2,7 +2,6 @@ import React from 'react'
 import BlurText from "./BlurText";
 import { motion } from 'framer-motion'
 import resume3 from '../assets/resume3.png'
-import resume2 from '../assets/resume2.png'
 import resume4 from '../assets/resume4.png'
 import Beams from './Beams';
 
