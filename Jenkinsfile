@@ -29,7 +29,7 @@ pipeline {
             steps {
                 dir('Frontend') {
                     echo 'Installing npm dependencies...'
-                    sh 'npm ci'
+                    bat 'npm ci'
                 }
             }
         }
@@ -38,7 +38,7 @@ pipeline {
             steps {
                 dir('Frontend') {
                     echo 'Running linter...'
-                    sh 'npm run lint'
+                    bat 'npm run lint'
                 }
             }
         }
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 dir('Frontend') {
                     echo 'Building production bundle...'
-                    sh 'npm run build'
+                    bat 'npm run build'
                 }
             }
             post {
