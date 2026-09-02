@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NODE_ENV   = 'production'
-        BUILD_DIR  = 'Frontend/dist'
+        BUILD_DIR = 'Frontend/dist'
     }
 
     tools {
@@ -29,7 +28,7 @@ pipeline {
             steps {
                 dir('Frontend') {
                     echo 'Installing npm dependencies...'
-                    bat 'npm ci'
+                    bat 'npm ci --include=dev'
                 }
             }
         }
