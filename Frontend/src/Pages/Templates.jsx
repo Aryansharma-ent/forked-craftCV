@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router';
-import { Eye, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, ArrowRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -31,7 +31,7 @@ export default function Templates() {
     <div className="bg-black min-h-screen text-white flex flex-col">
       <Navbar />
 
-      {/* ── Hero ── */}
+ 
       <section className="pt-24 pb-10 max-w-7xl mx-auto px-8 w-full">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -39,10 +39,6 @@ export default function Templates() {
           transition={{ duration: 0.55, ease: 'easeOut' }}
           className="flex flex-col items-center text-center gap-4"
         >
-          <div className="flex items-center gap-2 text-xs text-white/50 border border-white/10 rounded-full px-4 py-1.5 mb-2">
-            <Sparkles size={12} />
-            <span>50+ professional designs</span>
-          </div>
           <h1 className="elsie-black text-5xl md:text-7xl leading-tight">
             Browse Templates
           </h1>
@@ -52,7 +48,7 @@ export default function Templates() {
         </motion.div>
       </section>
 
-      {/* ── Filter Tabs (visual only) ── */}
+
       <section className="max-w-7xl mx-auto px-8 w-full pb-10">
         <div className="flex flex-wrap gap-2 justify-center">
           {CATEGORIES.map((cat) => (
@@ -70,7 +66,7 @@ export default function Templates() {
         </div>
       </section>
 
-      {/* ── Template Grid ── */}
+ 
       <section className="max-w-7xl mx-auto px-8 w-full pb-16 flex-1">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.map((template) => (
