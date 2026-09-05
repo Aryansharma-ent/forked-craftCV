@@ -1,4 +1,4 @@
-# <Project Name>
+# CraftCV
 
 > Replace every angle-bracket placeholder below. The hygiene check in CI will
 > fail until you do.
@@ -7,11 +7,11 @@
 
 | Roll No. | Name | GitHub username |
 |---|---|---|
-| <roll> | <name> | <username> |
+| 24ESKCS071 | Aryan Sharma | Aryansharma-ent |
 
 ## About
 
-<Two or three sentences on what this application does.>
+CraftCV is an interactive web application designed to help job seekers build ATS-optimized, professionally styled resumes with ease. Featuring a modern interface, customizable template gallery, and real-time editing, it streamlines the resume creation process for candidates across diverse industry roles. With instant export capability and clean visual styling, CraftCV empowers users to showcase their experience and stand out to recruiters.
 
 ## Tech stack
 

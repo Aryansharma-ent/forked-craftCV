@@ -3,7 +3,6 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 
 const buildKeyframes = (from, steps) => {
   const keys = new Set([...Object.keys(from), ...steps.flatMap(s => Object.keys(s))]);
-
   const keyframes = {};
   keys.forEach(k => {
     keyframes[k] = [from[k], ...steps.map(s => s[k])];
@@ -25,7 +24,10 @@ const BlurText = ({
   onAnimationComplete,
   stepDuration = 0.35
 }) => {
-  const elements = animateBy === 'words' ? text.split(' ') : text.split('');
+  const elements = useMemo(
+    () => animateBy === 'words' ? text.split(' ') : text.split(''),
+    [text, animateBy]
+  );
   const [inView, setInView] = useState(false);
   const ref = useRef(null);
 
@@ -46,16 +48,18 @@ const BlurText = ({
 
   const defaultFrom = useMemo(
     () =>
-      direction === 'top' ? { filter: 'blur(10px)', opacity: 0, y: -50 } : { filter: 'blur(10px)', opacity: 0, y: 50 },
+      direction === 'top'
+        ? { filter: 'blur(8px)', opacity: 0, y: -30 }
+        : { filter: 'blur(8px)', opacity: 0, y: 30 },
     [direction]
   );
 
   const defaultTo = useMemo(
     () => [
       {
-        filter: 'blur(5px)',
+        filter: 'blur(3px)',
         opacity: 0.5,
-        y: direction === 'top' ? 5 : -5
+        y: direction === 'top' ? 4 : -4
       },
       { filter: 'blur(0px)', opacity: 1, y: 0 }
     ],
@@ -67,23 +71,32 @@ const BlurText = ({
 
   const stepCount = toSnapshots.length + 1;
   const totalDuration = stepDuration * (stepCount - 1);
-  const times = Array.from({ length: stepCount }, (_, i) => (stepCount === 1 ? 0 : i / (stepCount - 1)));
+  const times = useMemo(
+    () => Array.from({ length: stepCount }, (_, i) => (stepCount === 1 ? 0 : i / (stepCount - 1))),
+    [stepCount]
+  );
+
+  // Pre-build keyframes once — not inside the map
+  const animateKeyframes = useMemo(
+    () => buildKeyframes(fromSnapshot, toSnapshots),
+    [fromSnapshot, toSnapshots]
+  );
 
   return (
     <p ref={ref} className={`blur-text ${className} flex flex-wrap`}>
       {elements.map((segment, index) => {
-        const animateKeyframes = buildKeyframes(fromSnapshot, toSnapshots);
-
         const spanTransition = {
           duration: totalDuration,
           times,
-          delay: (index * delay) / 1000
+          delay: (index * delay) / 1000,
+          ease: easing,
         };
-        spanTransition.ease = easing;
 
         return (
           <motion.span
-            className="inline-block will-change-[transform,filter,opacity]"
+            // backfaceVisibility forces the browser to create a GPU layer
+            style={{ backfaceVisibility: 'hidden' }}
+            className="inline-block will-change-[transform,opacity,filter]"
             key={index}
             initial={fromSnapshot}
             animate={inView ? animateKeyframes : fromSnapshot}

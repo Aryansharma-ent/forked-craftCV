@@ -34,7 +34,8 @@ const ParallaxSectionItem = ({ section }) => {
     })
 
     const opacityContent = useTransform(scrollYProgress, [0, 0.7], [0, 1])
-    const clipProgress = useTransform(scrollYProgress, [0, 0.7], ["inset(0 100% 0 0)", "inset(0 0% 0 0)"])
+    // scaleX is GPU-composited (no repaint), used instead of clipPath
+    const scaleXContent = useTransform(scrollYProgress, [0, 0.7], [0, 1])
     const translateContent = useTransform(scrollYProgress, [0, 1], [-50, 0])
 
     return (
@@ -42,19 +43,19 @@ const ParallaxSectionItem = ({ section }) => {
             ref={ref}
             className={`h-screen flex items-center justify-center md:gap-40 gap-20 ${section.reverse ? 'flex-row-reverse' : ''}`}
         >
+            {/* single y translation — don't double-apply on child */}
             <motion.div style={{ y: translateContent }}>
                 <div className="text-6xl max-w-sm elsie-black text-white">{section.title}</div>
-                <motion.p
-                    style={{ y: translateContent }}
-                    className="text-white/70 max-w-sm mt-10"
-                >
+                <p className="text-white/70 max-w-sm mt-10">
                     {section.description}
-                </motion.p>
+                </p>
             </motion.div>
             <motion.div
                 style={{
                     opacity: opacityContent,
-                    clipPath: clipProgress,
+                    scaleX: scaleXContent,
+                    transformOrigin: 'left center',
+                    willChange: 'transform, opacity',
                 }}
                 className="relative"
             >
