@@ -12,8 +12,7 @@ import {
   LuX as X, 
   LuSparkles as Sparkles, 
   LuPenLine as Edit3, 
-  LuArrowRight as ArrowRight,
-  LuUpload as Upload
+  LuArrowRight as ArrowRight
 } from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
 import Navbar from '@/components/Navbar'
@@ -172,7 +171,7 @@ export default function Dashboard() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-[#0a0a0a] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-3xl w-full text-white relative shadow-2xl"
+              className="bg-[#0a0a0a] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-xl w-full text-white relative shadow-2xl"
             >
               <button
                 onClick={() => setShowModal(false)}
@@ -191,7 +190,7 @@ export default function Dashboard() {
                 Choose the workflow that best fits your needs. Both options support all templates.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Option 1: Manual Builder */}
                 <div
                   onClick={() => handleSelectMode('manual')}
@@ -237,35 +236,6 @@ export default function Dashboard() {
 
                   <div className="mt-5 pt-4 border-t border-white/10 flex items-center text-xs font-semibold text-white group-hover:text-white">
                     <span>Build via GitHub</span>
-                    <ArrowRight size={14} className="ml-auto group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-
-                {/* Option 3: Upload & Audit Resume */}
-                <div
-                  onClick={() => {
-                    setShowModal(false)
-                    navigate('/audit')
-                  }}
-                  className="bg-gradient-to-tr from-purple-950/30 to-[#0d0917] hover:from-purple-950/50 hover:to-[#150f24] border border-purple-500/30 hover:border-purple-400 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 cursor-pointer group relative overflow-hidden"
-                >
-                  <div className="absolute top-3 right-3 text-[10px] font-bold bg-purple-500 text-white px-2 py-0.5 rounded-full">
-                    Audit
-                  </div>
-                  <div>
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                      <Upload size={20} />
-                    </div>
-                    <h3 className="text-base font-bold text-white mb-1.5 flex items-center gap-1.5">
-                      Upload PDF
-                    </h3>
-                    <p className="text-xs text-white/50 leading-relaxed">
-                      Upload an existing resume to get an instant AI ATS score, red-flag analysis, and line rewrites.
-                    </p>
-                  </div>
-
-                  <div className="mt-5 pt-4 border-t border-purple-500/20 flex items-center text-xs font-semibold text-purple-200 group-hover:text-white">
-                    <span>Scan &amp; Audit</span>
                     <ArrowRight size={14} className="ml-auto group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>

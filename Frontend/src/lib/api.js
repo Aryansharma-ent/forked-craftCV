@@ -101,26 +101,4 @@ export const agentApi = {
     }),
 };
 
-export const resumeApi = {
-  auditFile: async (file) => {
-    const formData = new FormData();
-    formData.append('resume', file);
-    const token = localStorage.getItem('craftcv_token');
-    const response = await fetch(`${API_BASE}/resume/audit`, {
-      method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: formData
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Audit failed');
-    return data;
-  },
-  auditText: (text) => request('/resume/audit', {
-    method: 'POST',
-    body: JSON.stringify({ text })
-  })
-};
-
-export default { authApi, portfolioApi, githubApi, agentApi, resumeApi };
+export default { authApi, portfolioApi, githubApi, agentApi };

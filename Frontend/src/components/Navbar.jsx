@@ -89,20 +89,6 @@ const Navbar = () => {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
-                    to='/audit'
-                    className={cn(
-                      'px-4 py-2 text-sm transition-colors rounded-md flex items-center gap-1.5',
-                      isActive('/audit') ? 'text-white font-medium' : 'text-white/70 hover:text-white'
-                    )}
-                  >
-                    <span>ATS Scanner</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
                     to='/interview'
                     className={cn(
                       'px-4 py-2 text-sm transition-colors rounded-md flex items-center gap-1.5',
@@ -196,16 +182,6 @@ const Navbar = () => {
               </Link>
             ))}
             <div className='border-t border-white/10 my-1' />
-            <Link
-              to='/audit'
-              className='text-sm text-white/70 hover:text-white transition-colors flex items-center justify-between'
-              onClick={() => setMobileOpen(false)}
-            >
-              <span>Resume ATS Scanner</span>
-              <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded-full font-mono">
-                Upload
-              </span>
-            </Link>
             <Link
               to='/interview'
               className='text-sm text-white/70 hover:text-white transition-colors flex items-center justify-between'

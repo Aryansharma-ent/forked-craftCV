@@ -7,7 +7,6 @@ import portfolioRoutes from './routes/portfolioRoutes.js';
 import githubRoutes from './routes/githubRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
-import resumeRoutes from './routes/resumeRoutes.js';
 
 dotenv.config();
 
@@ -32,7 +31,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/portfolios', portfolioRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/agent', agentRoutes);
-app.use('/api/resume', resumeRoutes);
 
 // Root & Healthcheck
 app.get('/api/health', (req, res) => {
