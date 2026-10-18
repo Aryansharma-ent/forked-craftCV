@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: craftcv-frontend
+  namespace: default
+  labels:
+    app: craftcv
+    component: frontend
+    version: "1.0"
+spec:
+  # Run 2 replicas so a rolling update never takes the service down.
+  # Increase this when traffic grows.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: craftcv
+      component: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1         # allow 1 extra pod during update
+      maxUnavailable: 0   # never take a pod down before a new one is ready
+  template:
+    metadata:
+      labels:
+        app: craftcv
+        component: frontend
+        version: "1.0"
+    spec:
+      containers:
+        - name: craftcv-frontend
+          # Replace this tag with your actual registry path when pushing:
+          # e.g. docker.io/<your-dockerhub-user>/craftcv-frontend:1.0
+          image: craftcv-frontend:latest
+          imagePullPolicy: IfNotPresent   # use local image; change to Always for registry
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          # Liveness: restart the container if nginx stops responding.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          # Readiness: only route traffic once nginx is ready.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+      # Spread pods across nodes for HA (ignored if single-node cluster).
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: craftcv
+              component: frontend

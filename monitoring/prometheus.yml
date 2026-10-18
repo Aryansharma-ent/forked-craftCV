@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: "craftcv"
+    environment: "local"
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "craftcv-frontend"
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ["craftcv-frontend:80"]
+        labels:
+          service: "frontend"
+          team: "24ESKCS071"

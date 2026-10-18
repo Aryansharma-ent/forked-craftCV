@@ -1,0 +1,35 @@
+# Exclude files and directories that should NOT be copied into the Docker image.
+# This speeds up the build and prevents accidentally leaking secrets.
+
+# Version control
+.git
+.gitignore
+
+# Node modules (installed fresh inside the container)
+Frontend/node_modules
+
+# Build output (rebuilt inside the container)
+Frontend/dist
+
+# Environment files (never bake secrets into the image)
+.env
+.env.*
+!.env.example
+
+# Editor & OS noise
+.vscode
+.idea
+*.DS_Store
+Thumbs.db
+
+# CI/CD artifacts (not needed in the image)
+.jenkins
+Jenkinsfile
+
+# Documentation (not needed at runtime)
+docs
+README.md
+
+# Monitoring and k8s configs (not part of the app bundle)
+monitoring
+k8s

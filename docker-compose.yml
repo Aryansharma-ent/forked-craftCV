@@ -1,0 +1,82 @@
+# CraftCV – docker-compose.yml
+#
+# Architecture
+# ─────────────────────────────────────────────────────────────────────────
+#  craftcv-frontend  │ React/Vite SPA served by nginx on port 80
+#  prometheus        │ Metrics scraper – scrapes the nginx /health endpoint
+#  grafana           │ Dashboard UI – pre-provisioned with Prometheus source
+# ─────────────────────────────────────────────────────────────────────────
+#
+# Usage
+#   docker compose up --build        # build & start everything
+#   docker compose up --build -d     # detached (background)
+#   docker compose down              # stop & remove containers
+#   docker compose logs craftcv-frontend   # view app logs
+#
+# Future services (backend API, database) can be appended here.
+
+services:
+
+  # ── Application ──────────────────────────────────────────────────────────
+  craftcv-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner           # only the slim nginx stage, not the builder
+    image: craftcv-frontend:latest
+    container_name: craftcv-frontend
+    ports:
+      - "3000:80"              # host:3000 → container nginx:80
+    restart: unless-stopped
+    networks:
+      - craftcv-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Monitoring: Prometheus ────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v3.4.1
+    container_name: craftcv-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - craftcv-net
+    depends_on:
+      - craftcv-frontend
+
+  # ── Monitoring: Grafana ───────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.5.5
+    container_name: craftcv-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: craftcv123
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-storage:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    networks:
+      - craftcv-net
+    depends_on:
+      - prometheus
+
+volumes:
+  grafana-storage:
+
+networks:
+  craftcv-net:
+    driver: bridge
