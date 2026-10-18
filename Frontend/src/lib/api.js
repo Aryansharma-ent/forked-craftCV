@@ -68,11 +68,32 @@ export const agentApi = {
       method: 'POST',
       body: JSON.stringify({ instruction, currentResume, apiKey }),
     }),
-  generateInterview: (resumeData, targetRole, interviewType) =>
-    request('/agent/interview', {
+  generateInterview: async (resumeData, targetRole, interviewType, file = null) => {
+    if (file) {
+      const formData = new FormData();
+      formData.append('resumePdf', file);
+      formData.append('targetRole', targetRole || 'Software Engineer');
+      formData.append('interviewType', interviewType || 'viva');
+      if (resumeData) formData.append('resumeData', JSON.stringify(resumeData));
+
+      const token = localStorage.getItem('craftcv_token');
+      const response = await fetch(`${API_BASE}/agent/interview`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: formData
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to generate interview');
+      return data;
+    }
+
+    return request('/agent/interview', {
       method: 'POST',
       body: JSON.stringify({ resumeData, targetRole, interviewType }),
-    }),
+    });
+  },
   evaluateAnswer: (question, candidateAnswer, targetRole) =>
     request('/agent/evaluate-answer', {
       method: 'POST',

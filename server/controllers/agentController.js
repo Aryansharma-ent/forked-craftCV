@@ -167,29 +167,40 @@ You MUST respond strictly with valid JSON conforming to this format (no markdown
 
 export const generateInterviewQuestions = async (req, res) => {
   try {
-    const { resumeData = {}, targetRole = 'Software Engineer', interviewType = 'viva' } = req.body;
-    const { personal = {}, experience = [], education = [], skills = [] } = resumeData;
+    let resumeData = {};
+    if (req.body.resumeData) {
+      try {
+        resumeData = typeof req.body.resumeData === 'string' ? JSON.parse(req.body.resumeData) : req.body.resumeData;
+      } catch (e) {
+        resumeData = {};
+      }
+    }
+    const targetRole = req.body.targetRole || 'Software Engineer';
+    const interviewType = req.body.interviewType || 'viva';
+    const hasPdfFile = !!req.file;
     const effectiveApiKey = process.env.GEMINI_API_KEY;
 
     if (effectiveApiKey) {
       try {
         const prompt = `You are a Senior Principal Engineer and Academic External Examiner conducting a technical viva / interview.
-Analyze the candidate's resume below and generate 4 realistic, challenging interview/viva questions specifically targeting their technical stack, projects, and architecture decisions.
+Analyze the candidate's resume (either attached as a PDF document or provided below) and generate 4 realistic, challenging interview/viva questions specifically targeting their technical stack, projects, and architecture decisions.
 
-Candidate Profile:
-Name: ${personal.name || 'Candidate'}
-Title: ${personal.title || targetRole}
-Skills: ${(skills || []).join(', ')}
-Experience & Projects: ${JSON.stringify(experience)}
-Target Role / Mode: ${targetRole} (${interviewType} defense)
+Interview Target Mode: ${interviewType === 'viva' ? '🎓 College CSE Viva / Project Defense' : interviewType === 'faang' ? '💻 FAANG / Big Tech Senior Round' : '🏗️ System Architecture & CS Fundamentals'}
+Target Role / Company: ${targetRole}
+
+${hasPdfFile ? 'NOTE: The candidate has uploaded their real PDF resume. Carefully read their projects, technical claims, tools, and experience from the attached PDF document.' : `Candidate Profile:
+Name: ${resumeData.personal?.name || 'Candidate'}
+Title: ${resumeData.personal?.title || targetRole}
+Skills: ${(resumeData.skills || []).join(', ')}
+Experience & Projects: ${JSON.stringify(resumeData.experience || [])}`}
 
 Question Requirements:
-1. Deep-dive into a specific project/metric they claimed on their resume (ask how they implemented it, architectural trade-offs, scalability).
-2. Deep CS / Systems fundamental question directly relevant to their tech stack (e.g., if Redis: cache coherence, if React: virtual DOM/reconciliation, if Docker/K8s: container isolation/cgroups).
-3. System design or failure scenario (e.g. what happens when a database shard fails, or network latency spikes).
-4. Academic / Viva defense question: asking to justify why they chose a specific technology over alternatives.
+1. Deep-dive into a specific project or metric claimed on their resume (ask how they implemented it, architectural trade-offs, scalability, or data consistency).
+2. Deep CS / Systems fundamental question directly relevant to the technologies mentioned on their resume (e.g. if Redis: eviction & clustering; if React: fiber & reconciliation; if Docker/K8s: namespaces & cgroups; if databases: index internals).
+3. System design or failure scenario (e.g. what happens during node failover, network partition, or traffic spike).
+4. Academic / Viva defense question: asking to justify why they chose a specific technology or design pattern over alternatives.
 
-You MUST respond strictly with valid JSON conforming to this schema (no markdown, no backticks):
+You MUST respond strictly with valid JSON conforming to this schema (no markdown, no backticks, no comments):
 {
   "questions": [
     {
@@ -204,19 +215,29 @@ You MUST respond strictly with valid JSON conforming to this schema (no markdown
   ]
 }`;
 
+        const parts = [{ text: prompt }];
+        if (hasPdfFile) {
+          parts.push({
+            inlineData: {
+              mimeType: req.file.mimetype || 'application/pdf',
+              data: req.file.buffer.toString('base64')
+            }
+          });
+        }
+
         for (const model of ['gemini-2.5-flash', 'gemini-1.5-flash']) {
           try {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
             const response = await axios.post(
               geminiUrl,
               {
-                contents: [{ parts: [{ text: prompt }] }],
+                contents: [{ parts }],
                 generationConfig: {
                   responseMimeType: 'application/json',
                   temperature: 0.3
                 }
               },
-              { timeout: 20000 }
+              { timeout: 25000 }
             );
 
             const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
