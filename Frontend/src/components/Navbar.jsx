@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from "react-router"
 import { cn } from "@/lib/utils"
-import { Menu, X, User, LogOut } from 'lucide-react'
+import { LuMenu as Menu, LuX as X, LuUser as User, LuLogOut as LogOut } from 'react-icons/lu'
 import {
   NavigationMenu,
   NavigationMenuContent,

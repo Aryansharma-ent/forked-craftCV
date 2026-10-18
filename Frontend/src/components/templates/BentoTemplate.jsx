@@ -1,16 +1,16 @@
 import { 
-  Globe, 
-  Mail, 
-  MapPin, 
-  ExternalLink, 
-  Star, 
-  Briefcase, 
-  GraduationCap, 
-  Sparkles,
-  Layers,
-  Terminal,
-  Cpu
-} from 'lucide-react';
+  LuGlobe as Globe, 
+  LuMail as Mail, 
+  LuMapPin as MapPin, 
+  LuExternalLink as ExternalLink, 
+  LuStar as Star, 
+  LuBriefcase as Briefcase, 
+  LuGraduationCap as GraduationCap, 
+  LuSparkles as Sparkles, 
+  LuLayers as Layers, 
+  LuTerminal as Terminal, 
+  LuCpu as Cpu 
+} from 'react-icons/lu';
 import { FaGithub as Github, FaLinkedin as Linkedin, FaXTwitter as Twitter } from 'react-icons/fa6';
 
 export const BentoTemplate = ({ portfolio }) => {

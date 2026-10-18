@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Globe, ExternalLink } from 'lucide-react';
+import { LuMail as Mail, LuPhone as Phone, LuMapPin as MapPin, LuGlobe as Globe, LuExternalLink as ExternalLink } from 'react-icons/lu';
 import { FaGithub as Github, FaLinkedin as Linkedin } from 'react-icons/fa6';
 
 export const ExecutiveTemplate = ({ portfolio }) => {

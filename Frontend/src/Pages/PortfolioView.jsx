@@ -4,7 +4,7 @@ import { portfolioApi } from '../lib/api';
 import BentoTemplate from '../components/templates/BentoTemplate';
 import TerminalTemplate from '../components/templates/TerminalTemplate';
 import ExecutiveTemplate from '../components/templates/ExecutiveTemplate';
-import { ArrowLeft, Loader2, Sparkles, Edit3 } from 'lucide-react';
+import { LuArrowLeft as ArrowLeft, LuLoaderCircle as Loader2, LuSparkles as Sparkles, LuPenLine as Edit3 } from 'react-icons/lu';
 import { DEFAULT_PORTFOLIO } from '../lib/portfolioStore';
 
 export const PortfolioView = () => {

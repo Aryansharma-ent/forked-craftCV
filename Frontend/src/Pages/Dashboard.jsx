@@ -2,18 +2,18 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router'
 import { 
-  FileText, 
-  Download, 
-  Star, 
-  Plus, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle, 
-  X, 
-  Sparkles, 
-  Edit3, 
-  ArrowRight 
-} from 'lucide-react'
+  LuFileText as FileText, 
+  LuDownload as Download, 
+  LuStar as Star, 
+  LuPlus as Plus, 
+  LuTrendingUp as TrendingUp, 
+  LuClock as Clock, 
+  LuCircleCheck as CheckCircle, 
+  LuX as X, 
+  LuSparkles as Sparkles, 
+  LuPenLine as Edit3, 
+  LuArrowRight as ArrowRight 
+} from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
 import Navbar from '@/components/Navbar'
 import resume2 from '../assets/resume2.png'

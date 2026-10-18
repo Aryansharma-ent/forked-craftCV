@@ -2,26 +2,26 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { motion } from 'framer-motion'
 import { 
-  Plus, 
-  Trash2, 
-  Download, 
-  User, 
-  Briefcase, 
-  GraduationCap, 
-  Zap, 
-  FileText, 
-  CheckCircle, 
-  ChevronLeft, 
-  Minus,
-  Sparkles,
-  Loader2,
-  Save,
-  Check,
-  ExternalLink,
-  Layers,
-  Terminal as TerminalIcon,
-  Eye
-} from 'lucide-react'
+  LuPlus as Plus, 
+  LuTrash2 as Trash2, 
+  LuDownload as Download, 
+  LuUser as User, 
+  LuBriefcase as Briefcase, 
+  LuGraduationCap as GraduationCap, 
+  LuZap as Zap, 
+  LuFileText as FileText, 
+  LuCircleCheck as CheckCircle, 
+  LuChevronLeft as ChevronLeft, 
+  LuMinus as Minus, 
+  LuSparkles as Sparkles, 
+  LuLoaderCircle as Loader2, 
+  LuSave as Save, 
+  LuCheck as Check, 
+  LuExternalLink as ExternalLink, 
+  LuLayers as Layers, 
+  LuTerminal as TerminalIcon, 
+  LuEye as Eye 
+} from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
 import { githubApi, portfolioApi } from '../lib/api'
 import resume3 from '../assets/resume3.png'

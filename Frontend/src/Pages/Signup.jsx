@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
-import { Mail, Lock, User, Loader2, AlertCircle } from 'lucide-react'
+import { LuMail as Mail, LuLock as Lock, LuUser as User, LuLoaderCircle as Loader2, LuCircleAlert as AlertCircle } from 'react-icons/lu'
 import { authApi } from '../lib/api'
 
 export default function Signup() {
