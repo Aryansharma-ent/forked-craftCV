@@ -23,7 +23,6 @@ import {
   LuEye as Eye,
   LuBot as Bot,
   LuRotateCcw as RotateCcw,
-  LuKey as Key,
   LuSend as Send,
   LuCpu as Cpu,
   LuWandSparkles as Wand2
@@ -133,19 +132,12 @@ export default function Builder() {
 
   // Autonomous Agentic Gemini Copilot State
   const [agentInstruction, setAgentInstruction] = useState('')
-  const [agentApiKey, setAgentApiKey] = useState(() => localStorage.getItem('craftcv_gemini_key') || '')
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false)
   const [agentLoading, setAgentLoading] = useState(false)
   const [agentStepText, setAgentStepText] = useState('')
   const [agentSuccessMessage, setAgentSuccessMessage] = useState(null)
   const [agentExplanation, setAgentExplanation] = useState(null)
   const [agentSource, setAgentSource] = useState(null)
   const [agentPreviousState, setAgentPreviousState] = useState(null)
-
-  const handleApiKeyChange = (val) => {
-    setAgentApiKey(val)
-    localStorage.setItem('craftcv_gemini_key', val)
-  }
 
   const handleExecuteAgent = async (overridePrompt) => {
     const targetInstruction = (overridePrompt !== undefined ? overridePrompt : agentInstruction).trim()
@@ -173,8 +165,7 @@ export default function Builder() {
     try {
       const res = await agentApi.command(
         targetInstruction,
-        { personal, experience, education, skills },
-        agentApiKey.trim() || undefined
+        { personal, experience, education, skills }
       )
 
       if (res.success && res.data) {
@@ -643,67 +634,22 @@ export default function Builder() {
               
               {/* Top Banner Card */}
               <div className="p-6 rounded-2xl bg-gradient-to-br from-[#120b1f] via-[#0d0914] to-[#070707] border border-purple-500/30 space-y-4 shadow-xl">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shadow-inner">
-                      <Sparkles size={20} className="animate-pulse" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-bold elsie-black text-white">Autonomous Agentic Copilot</h2>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-purple-400/40 bg-purple-500/20 text-purple-200 font-mono">
-                          Gemini 1.5
-                        </span>
-                      </div>
-                      <p className="text-xs text-white/60">
-                        Paste a target Job Description or give natural language commands. The agent directly rewrites summaries, injects required tech stacks, and calculates quantifiable metrics for your bullets.
-                      </p>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shadow-inner shrink-0">
+                    <Sparkles size={20} className="animate-pulse" />
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs transition-colors cursor-pointer self-start sm:self-auto shrink-0"
-                  >
-                    <Key size={12} className={agentApiKey ? 'text-amber-400' : 'text-white/40'} />
-                    <span>{agentApiKey ? 'API Key Configured' : 'Configure Gemini Key'}</span>
-                  </button>
-                </div>
-
-                {/* Gemini API Key Configuration Drawer */}
-                {showApiKeyInput && (
-                  <div className="p-4 rounded-xl bg-black/60 border border-purple-500/20 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <label className="text-white/80 font-medium flex items-center gap-1.5">
-                        <Key size={13} className="text-purple-400" />
-                        Gemini API Key (Optional)
-                      </label>
-                      <span className="text-[10px] text-white/40">Saved in browser localStorage</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl font-bold elsie-black text-white">Autonomous Agentic Copilot</h2>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-purple-400/40 bg-purple-500/20 text-purple-200 font-mono">
+                        Gemini 2.5
+                      </span>
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="password"
-                        value={agentApiKey}
-                        onChange={(e) => handleApiKeyChange(e.target.value)}
-                        placeholder="Enter personal Gemini API key (optional)"
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-white/20 focus:outline-none focus:border-purple-400 font-mono text-xs"
-                      />
-                      {agentApiKey && (
-                        <button
-                          type="button"
-                          onClick={() => handleApiKeyChange('')}
-                          className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-rose-400 text-xs transition-colors cursor-pointer"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-white/50 leading-relaxed">
-                      CraftCV is configured with cloud AI intelligence by default. You may optionally provide a custom key to override.
+                    <p className="text-xs text-white/60">
+                      Paste a target Job Description or give natural language commands. The agent directly rewrites summaries, injects required tech stacks, and calculates quantifiable metrics for your bullets.
                     </p>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Success / Explanation Banner with Undo */}
