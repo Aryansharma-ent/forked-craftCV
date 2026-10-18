@@ -177,13 +177,22 @@ export const generateInterviewQuestions = async (req, res) => {
     }
     const targetRole = req.body.targetRole || 'Software Engineer';
     const interviewType = req.body.interviewType || 'viva';
+    const questionCount = Math.min(Math.max(parseInt(req.body.questionCount, 10) || 4, 1), 8);
+    let existingQuestions = [];
+    if (req.body.existingQuestions) {
+      try {
+        existingQuestions = typeof req.body.existingQuestions === 'string' ? JSON.parse(req.body.existingQuestions) : req.body.existingQuestions;
+      } catch (e) {
+        existingQuestions = [];
+      }
+    }
     const hasPdfFile = !!req.file;
     const effectiveApiKey = process.env.GEMINI_API_KEY;
 
     if (effectiveApiKey) {
       try {
         const prompt = `You are a Senior Principal Engineer and Academic External Examiner conducting a technical viva / interview.
-Analyze the candidate's resume (either attached as a PDF document or provided below) and generate 4 realistic, challenging interview/viva questions specifically targeting their technical stack, projects, and architecture decisions.
+Analyze the candidate's resume (either attached as a PDF document or provided below) and generate ${questionCount} realistic, challenging interview/viva questions specifically targeting their technical stack, projects, and architecture decisions.
 
 Interview Target Mode: ${interviewType === 'viva' ? '🎓 College CSE Viva / Project Defense' : interviewType === 'faang' ? '💻 FAANG / Big Tech Senior Round' : '🏗️ System Architecture & CS Fundamentals'}
 Target Role / Company: ${targetRole}
@@ -193,6 +202,10 @@ Name: ${resumeData.personal?.name || 'Candidate'}
 Title: ${resumeData.personal?.title || targetRole}
 Skills: ${(resumeData.skills || []).join(', ')}
 Experience & Projects: ${JSON.stringify(resumeData.experience || [])}`}
+
+${existingQuestions && existingQuestions.length > 0 ? `PREVIOUS QUESTIONS ALREADY ASKED (DO NOT REPEAT OR OVERLAP WITH THESE):
+${existingQuestions.map((eq, i) => `${i + 1}. "${eq}"`).join('\n')}
+Generate entirely NEW, deeper questions covering other aspects of their stack, design choices, concurrency, failure modes, or viva defense.` : ''}
 
 Question Requirements:
 1. Deep-dive into a specific project or metric claimed on their resume (ask how they implemented it, architectural trade-offs, scalability, or data consistency).

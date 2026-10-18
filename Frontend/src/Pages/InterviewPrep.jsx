@@ -17,7 +17,9 @@ import {
   LuFlame as Flame,
   LuUpload as Upload,
   LuFileText as FileText,
-  LuX as X
+  LuX as X,
+  LuPlus as Plus,
+  LuChevronRight as ChevronRight
 } from 'react-icons/lu'
 import Navbar from '@/components/Navbar'
 import { agentApi } from '../lib/api'
@@ -64,10 +66,11 @@ export default function InterviewPrep() {
   const [questions, setQuestions] = useState([])
   const [activeQuestionIdx, setActiveQuestionIdx] = useState(0)
   const [generating, setGenerating] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [stepText, setStepText] = useState('')
-  const [candidateAnswer, setCandidateAnswer] = useState('')
+  const [answers, setAnswers] = useState({})
+  const [evaluations, setEvaluations] = useState({})
   const [evaluating, setEvaluating] = useState(false)
-  const [evaluationResult, setEvaluationResult] = useState(null)
   const [revealedModelAnswers, setRevealedModelAnswers] = useState({})
 
   // Automatically generate questions on initial mount with default
@@ -93,8 +96,9 @@ export default function InterviewPrep() {
 
   const handleGenerateQuestions = async () => {
     setGenerating(true)
-    setEvaluationResult(null)
-    setCandidateAnswer('')
+    setAnswers({})
+    setEvaluations({})
+    setRevealedModelAnswers({})
     setStepText(pdfFile ? 'Reading uploaded PDF document...' : 'Analyzing candidate background...')
 
     const t1 = setTimeout(() => {
@@ -109,7 +113,9 @@ export default function InterviewPrep() {
         resumeData,
         `${targetRole} at ${targetCompany}`,
         interviewType,
-        resumeMode === 'upload' ? pdfFile : null
+        resumeMode === 'upload' ? pdfFile : null,
+        [],
+        4
       )
       if (res.success && res.data && res.data.length > 0) {
         setQuestions(res.data)
@@ -124,18 +130,50 @@ export default function InterviewPrep() {
     }
   }
 
+  const handleAddMoreQuestions = async () => {
+    if (loadingMore || generating) return
+    setLoadingMore(true)
+    try {
+      const existingQuestionTexts = questions.map(q => q.question)
+      const res = await agentApi.generateInterview(
+        resumeData,
+        `${targetRole} at ${targetCompany}`,
+        interviewType,
+        resumeMode === 'upload' ? pdfFile : null,
+        existingQuestionTexts,
+        4
+      )
+      if (res.success && res.data && res.data.length > 0) {
+        const startIndex = questions.length
+        const newBatch = res.data.map((q, i) => ({
+          ...q,
+          id: startIndex + i + 1
+        }))
+        setQuestions(prev => [...prev, ...newBatch])
+        setActiveQuestionIdx(startIndex)
+      }
+    } catch (err) {
+      console.error('Failed to load more viva questions:', err)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
   const handleEvaluateAnswer = async () => {
-    if (!candidateAnswer.trim() || !questions[activeQuestionIdx]) return
+    const currentAnswer = answers[activeQuestionIdx] || ''
+    if (!currentAnswer.trim() || !questions[activeQuestionIdx]) return
     setEvaluating(true)
-    setEvaluationResult(null)
     try {
       const res = await agentApi.evaluateAnswer(
         questions[activeQuestionIdx].question,
-        candidateAnswer.trim(),
+        currentAnswer.trim(),
         targetRole
       )
       if (res.success && res.data) {
-        setEvaluationResult(res.data)
+        setEvaluations(prev => ({
+          ...prev,
+          [activeQuestionIdx]: res.data
+        }))
       }
     } catch (err) {
       console.error('Failed to evaluate answer:', err)
@@ -152,6 +190,8 @@ export default function InterviewPrep() {
   }
 
   const currentQ = questions[activeQuestionIdx]
+  const currentAnswer = answers[activeQuestionIdx] || ''
+  const currentEvaluation = evaluations[activeQuestionIdx] || null
 
   return (
     <div className="bg-black min-h-screen text-white flex flex-col font-sans">
@@ -379,11 +419,7 @@ export default function InterviewPrep() {
               {questions.map((q, idx) => (
                 <div
                   key={q.id || idx}
-                  onClick={() => {
-                    setActiveQuestionIdx(idx)
-                    setEvaluationResult(null)
-                    setCandidateAnswer('')
-                  }}
+                  onClick={() => setActiveQuestionIdx(idx)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                     activeQuestionIdx === idx
                       ? 'border-purple-500/80 bg-purple-950/30 shadow-lg'
@@ -394,15 +430,43 @@ export default function InterviewPrep() {
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-white/70">
                       {q.category}
                     </span>
-                    <span className={`text-[10px] font-medium ${q.difficulty === 'Hard' ? 'text-rose-400' : 'text-amber-400'}`}>
-                      {q.difficulty}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {evaluations[idx] && (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                          <CheckCircle size={10} />
+                          {evaluations[idx].score}/10
+                        </span>
+                      )}
+                      <span className={`text-[10px] font-medium ${q.difficulty === 'Hard' ? 'text-rose-400' : 'text-amber-400'}`}>
+                        {q.difficulty}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-xs font-semibold text-white/90 line-clamp-2 leading-relaxed">
                     Q{idx + 1}: {q.question}
                   </p>
                 </div>
               ))}
+
+              {/* Add More Questions to List */}
+              <button
+                type="button"
+                onClick={handleAddMoreQuestions}
+                disabled={loadingMore || generating}
+                className="w-full p-3.5 rounded-2xl border border-dashed border-purple-500/40 bg-purple-950/20 hover:bg-purple-950/40 text-purple-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-40"
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin text-purple-400" />
+                    <span>Generating Next 4 Questions...</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus size={14} className="text-purple-400" />
+                    <span>+ Add 4 More Viva Questions</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Right Column: Active Question Arena & AI Evaluator */}
@@ -452,8 +516,8 @@ export default function InterviewPrep() {
                     </label>
                     <textarea
                       rows={5}
-                      value={candidateAnswer}
-                      onChange={(e) => setCandidateAnswer(e.target.value)}
+                      value={currentAnswer}
+                      onChange={(e) => setAnswers(prev => ({ ...prev, [activeQuestionIdx]: e.target.value }))}
                       placeholder="Type your explanation, technical architecture trade-offs, or bullet points as you would answer in the viva/interview..."
                       className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-xs placeholder-white/30 focus:outline-none focus:border-purple-400 leading-relaxed"
                     />
@@ -470,7 +534,7 @@ export default function InterviewPrep() {
 
                       <button
                         type="button"
-                        disabled={evaluating || !candidateAnswer.trim()}
+                        disabled={evaluating || !currentAnswer.trim()}
                         onClick={handleEvaluateAnswer}
                         className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs transition-all shadow-lg shadow-purple-600/30 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
@@ -503,7 +567,7 @@ export default function InterviewPrep() {
                   )}
 
                   {/* AI Evaluation Result Card */}
-                  {evaluationResult && (
+                  {currentEvaluation && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -513,12 +577,12 @@ export default function InterviewPrep() {
                         <div>
                           <span className="text-[10px] uppercase font-semibold text-white/40 tracking-wider">Evaluation Score</span>
                           <p className="text-2xl font-bold text-white flex items-center gap-2">
-                            <span>{evaluationResult.score}/10</span>
-                            <span className="text-xs font-normal text-purple-300">· {evaluationResult.verdict}</span>
+                            <span>{currentEvaluation.score}/10</span>
+                            <span className="text-xs font-normal text-purple-300">· {currentEvaluation.verdict}</span>
                           </p>
                         </div>
                         <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 font-bold text-lg font-mono">
-                          {evaluationResult.score >= 8 ? 'A' : evaluationResult.score >= 6 ? 'B' : 'C'}
+                          {currentEvaluation.score >= 8 ? 'A' : currentEvaluation.score >= 6 ? 'B' : 'C'}
                         </div>
                       </div>
 
@@ -530,7 +594,7 @@ export default function InterviewPrep() {
                             Key Strengths
                           </p>
                           <ul className="space-y-1 text-white/80 list-disc list-inside">
-                            {(evaluationResult.strengths || []).map((s, i) => (
+                            {(currentEvaluation.strengths || []).map((s, i) => (
                               <li key={i}>{s}</li>
                             ))}
                           </ul>
@@ -542,7 +606,7 @@ export default function InterviewPrep() {
                             Areas for Improvement
                           </p>
                           <ul className="space-y-1 text-white/80 list-disc list-inside">
-                            {(evaluationResult.improvements || []).map((imp, i) => (
+                            {(currentEvaluation.improvements || []).map((imp, i) => (
                               <li key={i}>{imp}</li>
                             ))}
                           </ul>
@@ -550,13 +614,77 @@ export default function InterviewPrep() {
                       </div>
 
                       {/* Viva Presentation Tip */}
-                      {evaluationResult.vivaTip && (
+                      {currentEvaluation.vivaTip && (
                         <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/80 leading-relaxed">
                           <span className="font-bold text-purple-300">💡 Academic Viva Tip: </span>
-                          <span>{evaluationResult.vivaTip}</span>
+                          <span>{currentEvaluation.vivaTip}</span>
                         </div>
                       )}
                     </motion.div>
+                  )}
+
+                  {/* Question Stepper & Navigation Controls */}
+                  <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      disabled={activeQuestionIdx === 0}
+                      onClick={() => setActiveQuestionIdx(prev => Math.max(0, prev - 1))}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <ChevronLeft size={14} />
+                      <span>Previous Question</span>
+                    </button>
+
+                    <div className="flex items-center gap-2 text-xs text-white/50">
+                      <span>Question {activeQuestionIdx + 1} of {questions.length}</span>
+                      {evaluations[activeQuestionIdx] && (
+                        <span className="text-emerald-400 font-medium">· Attempted ✓</span>
+                      )}
+                    </div>
+
+                    {activeQuestionIdx < questions.length - 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => setActiveQuestionIdx(prev => prev + 1)}
+                        className="w-full sm:w-auto px-5 py-2 rounded-xl bg-white text-black text-xs font-semibold hover:bg-white/90 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow"
+                      >
+                        <span>Next Question</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleAddMoreQuestions}
+                        disabled={loadingMore || generating}
+                        className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-purple-600/30 disabled:opacity-40"
+                      >
+                        {loadingMore ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                        <span>{loadingMore ? 'Generating Next Questions...' : '+ Add 4 More Questions'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Completion Banner when on the last question and evaluated */}
+                  {activeQuestionIdx === questions.length - 1 && currentEvaluation && (
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-[#0a0a0a] border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 animate-in fade-in">
+                      <div>
+                        <p className="text-sm font-bold text-white flex items-center gap-2">
+                          <span>🎯 All {questions.length} Questions Attempted!</span>
+                        </p>
+                        <p className="text-xs text-white/60 mt-0.5">
+                          Want to practice deeper architectural scenarios, concurrency, or more viva defense questions?
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddMoreQuestions}
+                        disabled={loadingMore || generating}
+                        className="px-5 py-2.5 rounded-xl bg-white text-black font-semibold text-xs hover:bg-white/90 transition-all cursor-pointer flex items-center gap-2 shrink-0 shadow-md disabled:opacity-40"
+                      >
+                        {loadingMore ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                        <span>{loadingMore ? 'Generating Next Batch...' : '+ Add 4 More Viva Questions'}</span>
+                      </button>
+                    </div>
                   )}
 
                 </div>

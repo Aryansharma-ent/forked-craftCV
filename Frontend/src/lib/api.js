@@ -68,12 +68,16 @@ export const agentApi = {
       method: 'POST',
       body: JSON.stringify({ instruction, currentResume, apiKey }),
     }),
-  generateInterview: async (resumeData, targetRole, interviewType, file = null) => {
+  generateInterview: async (resumeData, targetRole, interviewType, file = null, existingQuestions = [], questionCount = 4) => {
     if (file) {
       const formData = new FormData();
       formData.append('resumePdf', file);
       formData.append('targetRole', targetRole || 'Software Engineer');
       formData.append('interviewType', interviewType || 'viva');
+      formData.append('questionCount', questionCount.toString());
+      if (existingQuestions && existingQuestions.length > 0) {
+        formData.append('existingQuestions', JSON.stringify(existingQuestions));
+      }
       if (resumeData) formData.append('resumeData', JSON.stringify(resumeData));
 
       const token = localStorage.getItem('craftcv_token');
@@ -91,7 +95,7 @@ export const agentApi = {
 
     return request('/agent/interview', {
       method: 'POST',
-      body: JSON.stringify({ resumeData, targetRole, interviewType }),
+      body: JSON.stringify({ resumeData, targetRole, interviewType, existingQuestions, questionCount }),
     });
   },
   evaluateAnswer: (question, candidateAnswer, targetRole) =>
