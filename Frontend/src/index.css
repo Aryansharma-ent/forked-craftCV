@@ -159,3 +159,24 @@
 .float {
   animation: float 4s ease-in-out infinite;
 }
+
+/* Resume float animations — CSS-only, GPU-composited, no JS per frame */
+@keyframes float-resume-kf {
+  0%, 100% { transform: translateY(0px) rotate(6deg); }
+  50%       { transform: translateY(-10px) rotate(6deg); }
+}
+
+@keyframes float-resume-slow-kf {
+  0%, 100% { transform: translateY(0px) rotate(-6deg); }
+  50%       { transform: translateY(-6px) rotate(-6deg); }
+}
+
+.float-resume {
+  will-change: transform;
+  animation: float-resume-kf 4.5s ease-in-out infinite;
+}
+
+.float-resume-slow {
+  will-change: transform;
+  animation: float-resume-slow-kf 4s ease-in-out infinite;
+}

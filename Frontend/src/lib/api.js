@@ -1,12 +1,16 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const request = async (endpoint, options = {}) => {
+  const token = localStorage.getItem('craftcv_token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
   const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
     ...options,
+    headers,
   };
 
   const response = await fetch(`${API_BASE}${endpoint}`, config);
@@ -21,8 +25,22 @@ const request = async (endpoint, options = {}) => {
   return data;
 };
 
+export const authApi = {
+  register: (userData) =>
+    request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    }),
+  login: (credentials) =>
+    request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    }),
+  getMe: () => request('/auth/me'),
+};
+
 export const portfolioApi = {
-  list: () => request('/portfolios'),
+  list: (userId) => request(`/portfolios${userId ? `?userId=${userId}` : ''}`),
   get: (id) => request(`/portfolios/${id}`),
   save: (data) =>
     request('/portfolios', {
@@ -44,12 +62,4 @@ export const githubApi = {
   ingest: (username) => request(`/github/${encodeURIComponent(username)}`),
 };
 
-export const aiApi = {
-  ask: (question, candidateContext) =>
-    request('/ai/chat', {
-      method: 'POST',
-      body: JSON.stringify({ question, candidateContext }),
-    }),
-};
-
-export default { portfolioApi, githubApi, aiApi };
+export default { authApi, portfolioApi, githubApi };

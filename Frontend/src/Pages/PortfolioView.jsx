@@ -4,7 +4,6 @@ import { portfolioApi } from '../lib/api';
 import BentoTemplate from '../components/templates/BentoTemplate';
 import TerminalTemplate from '../components/templates/TerminalTemplate';
 import ExecutiveTemplate from '../components/templates/ExecutiveTemplate';
-import RecruiterChatbot from '../components/portfolio/RecruiterChatbot';
 import { ArrowLeft, Loader2, Sparkles, Edit3 } from 'lucide-react';
 import { DEFAULT_PORTFOLIO } from '../lib/portfolioStore';
 
@@ -76,9 +75,6 @@ export const PortfolioView = () => {
       ) : (
         <BentoTemplate portfolio={portfolio} />
       )}
-
-      {/* Floating Recruiter AI Widget */}
-      <RecruiterChatbot portfolio={portfolio} />
     </div>
   );
 };

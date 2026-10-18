@@ -1,836 +1,757 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router';
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router'
+import { motion } from 'framer-motion'
 import { 
-  Save, 
-  Eye, 
-  ExternalLink, 
-  Sparkles, 
-  Check, 
-  Loader2, 
-  Layers, 
-  Terminal, 
-  FileText, 
-  User, 
-  Code2, 
-  Briefcase, 
-  GraduationCap, 
-  Bot, 
   Plus, 
   Trash2, 
-  RotateCcw,
-  Share2,
-  Copy,
-  Palette
-} from 'lucide-react';
-import { FaGithub as Github } from 'react-icons/fa6';
-import { githubApi, portfolioApi } from '../lib/api';
-import { DEFAULT_PORTFOLIO, loadDraftPortfolio, saveDraftPortfolio } from '../lib/portfolioStore';
-import BentoTemplate from '../components/templates/BentoTemplate';
-import TerminalTemplate from '../components/templates/TerminalTemplate';
-import ExecutiveTemplate from '../components/templates/ExecutiveTemplate';
-import RecruiterChatbot from '../components/portfolio/RecruiterChatbot';
+  Download, 
+  User, 
+  Briefcase, 
+  GraduationCap, 
+  Zap, 
+  FileText, 
+  CheckCircle, 
+  ChevronLeft, 
+  Minus,
+  Sparkles,
+  Loader2,
+  Save,
+  Check,
+  ExternalLink,
+  Layers,
+  Terminal as TerminalIcon,
+  Eye
+} from 'lucide-react'
+import { FaGithub as Github } from 'react-icons/fa6'
+import { githubApi, portfolioApi } from '../lib/api'
+import resume3 from '../assets/resume3.png'
+import resume2 from '../assets/resume2.png'
+import resume4 from '../assets/resume4.png'
+import resume from '../assets/resume.png'
 
-export const Builder = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+const templatePreviews = [
+  { id: 'apex',    name: 'Apex',    img: resume3 },
+  { id: 'nova',    name: 'Nova',    img: resume2 },
+  { id: 'slate',   name: 'Slate',   img: resume4 },
+  { id: 'minimal', name: 'Minimal', img: resume  },
+]
 
-  // Load portfolio state
-  const [portfolio, setPortfolio] = useState(() => {
-    const draft = loadDraftPortfolio();
-    const queryTemplate = searchParams.get('template');
-    if (queryTemplate) {
-      draft.template = queryTemplate;
+const SECTIONS = [
+  { id: 'personal',    label: 'Personal Info', icon: User           },
+  { id: 'summary',     label: 'Summary',       icon: FileText       },
+  { id: 'experience',  label: 'Experience',    icon: Briefcase      },
+  { id: 'education',   label: 'Education',     icon: GraduationCap  },
+  { id: 'skills',      label: 'Skills',        icon: Zap            },
+]
+
+export default function Builder() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialMode = searchParams.get('mode') || 'manual'
+  const initialTemplate = searchParams.get('template') || 'apex'
+
+  const [mode, setMode] = useState(initialMode)
+  const [selectedTemplate, setSelectedTemplate] = useState(initialTemplate)
+  const [activeSection, setActiveSection] = useState(mode === 'github' ? 'github' : 'personal')
+
+  // Form State
+  const [personal, setPersonal] = useState({
+    name: 'Alex Chen',
+    title: 'Senior Software Engineer',
+    email: 'alex.chen@email.com',
+    phone: '+1 (555) 012-3456',
+    location: 'San Francisco, CA',
+    linkedin: 'linkedin.com/in/alexchen',
+    website: 'alexchen.dev',
+    summary: 'Experienced software engineer with 6+ years building scalable web applications. Passionate about clean architecture, developer experience, and shipping products that users love.',
+  })
+
+  const [experience, setExperience] = useState([
+    {
+      id: 1,
+      company: 'Stripe',
+      role: 'Senior Software Engineer',
+      start: 'Mar 2022',
+      end: 'Present',
+      location: 'San Francisco, CA',
+      bullets: [
+        'Led a team of 5 engineers to rebuild the payments dashboard, reducing load time by 60%.',
+        'Designed and shipped a new webhooks system handling 2M+ events/day with 99.99% reliability.',
+        'Mentored 3 junior engineers through structured code reviews and weekly 1:1s.',
+      ],
+    },
+    {
+      id: 2,
+      company: 'Airbnb',
+      role: 'Software Engineer',
+      start: 'Jun 2019',
+      end: 'Feb 2022',
+      location: 'San Francisco, CA',
+      bullets: [
+        'Built the host earnings analytics feature used by 4M+ hosts worldwide.',
+        'Reduced CI pipeline duration by 40% through test parallelization and caching strategies.',
+      ],
+    },
+  ])
+
+  const [education, setEducation] = useState([
+    { id: 1, school: 'University of California, Berkeley', degree: 'B.S. Computer Science', start: '2015', end: '2019', gpa: '3.8' },
+  ])
+
+  const [skills, setSkills] = useState([
+    'TypeScript', 'React', 'Node.js', 'PostgreSQL', 'Redis', 'AWS', 'Go', 'GraphQL', 'Docker', 'Kubernetes'
+  ])
+
+  // GitHub Ingestion State
+  const [githubUser, setGithubUser] = useState('')
+  const [fetchingGithub, setFetchingGithub] = useState(false)
+  const [githubResult, setGithubResult] = useState(null)
+  const [githubError, setGithubError] = useState(null)
+
+  // Save / Persistence State
+  const [saving, setSaving] = useState(false)
+  const [savedSuccess, setSavedSuccess] = useState(null)
+
+  // Sync mode changes with URL
+  const switchMode = (newMode) => {
+    setMode(newMode)
+    setSearchParams({ mode: newMode, template: selectedTemplate })
+    if (newMode === 'github') {
+      setActiveSection('github')
+    } else if (activeSection === 'github') {
+      setActiveSection('personal')
     }
-    return draft;
-  });
+  }
 
-  const [activeTab, setActiveTab] = useState('import');
-  const [githubUser, setGithubUser] = useState(portfolio.personalInfo?.githubUsername || '');
-  const [importing, setImporting] = useState(false);
-  const [importMessage, setImportMessage] = useState(null);
+  // Handle GitHub Ingestion
+  const handleGithubFetch = async (e) => {
+    if (e) e.preventDefault()
+    if (!githubUser.trim()) return
 
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(null);
-  const [savedSlug, setSavedSlug] = useState(portfolio.slug || '');
-  const [previewMode, setPreviewMode] = useState(false);
-
-  // Auto-save draft to local storage on edits
-  useEffect(() => {
-    saveDraftPortfolio(portfolio);
-  }, [portfolio]);
-
-  // Handle 1-Click GitHub Ingest
-  const handleGithubImport = async (e) => {
-    if (e) e.preventDefault();
-    if (!githubUser.trim()) return;
-
-    setImporting(true);
-    setImportMessage(null);
+    setFetchingGithub(true)
+    setGithubError(null)
+    setGithubResult(null)
 
     try {
-      const res = await githubApi.ingest(githubUser.trim());
+      const res = await githubApi.ingest(githubUser.trim())
       if (res.success && res.data) {
-        const { personalInfo, skills, projects } = res.data;
-        
-        setPortfolio(prev => ({
+        const { personalInfo, skills: fetchedSkills, projects } = res.data
+
+        // Auto populate personal data
+        setPersonal(prev => ({
           ...prev,
-          slug: personalInfo.githubUsername.toLowerCase(),
-          personalInfo: {
-            ...prev.personalInfo,
-            ...personalInfo
-          },
-          skills: {
-            languages: skills.languages?.length ? skills.languages : prev.skills.languages,
-            frameworks: skills.frameworks?.length ? skills.frameworks : prev.skills.frameworks,
-            tools: skills.tools?.length ? skills.tools : prev.skills.tools
-          },
-          projects: projects?.length ? projects : prev.projects
-        }));
+          name: personalInfo.fullName || prev.name,
+          title: personalInfo.title || prev.title,
+          summary: personalInfo.bio || prev.summary,
+          location: personalInfo.location || prev.location,
+          website: personalInfo.websiteUrl || prev.website,
+          linkedin: personalInfo.twitterUrl || prev.linkedin,
+          email: personalInfo.email || prev.email
+        }))
 
-        setImportMessage({
-          type: 'success',
-          text: `Successfully ingested GitHub profile! Parsed ${projects?.length || 0} repositories and auto-detected top skills.`
-        });
-      } else {
-        setImportMessage({ type: 'error', text: res.message || 'Could not import GitHub profile.' });
+        // Auto populate skills
+        const combinedSkills = Array.from(new Set([
+          ...(fetchedSkills.languages || []),
+          ...(fetchedSkills.frameworks || []),
+          ...(fetchedSkills.tools || [])
+        ]))
+        if (combinedSkills.length > 0) {
+          setSkills(combinedSkills)
+        }
+
+        // Format fetched projects into experience bullets if useful
+        if (projects && projects.length > 0) {
+          const newExp = {
+            id: Date.now(),
+            company: 'Open Source / GitHub Repositories',
+            role: 'Lead Architect & Maintainer',
+            start: '2023',
+            end: 'Present',
+            location: 'Remote',
+            bullets: projects.slice(0, 3).map(p => 
+              `${p.title}: ${p.description} (Built with ${(p.technologies || []).join(', ')}) ★ ${p.stars || 0} stars`
+            )
+          }
+          setExperience(prev => [newExp, ...prev])
+        }
+
+        setGithubResult({
+          reposCount: projects?.length || 0,
+          languages: fetchedSkills.languages || []
+        })
       }
     } catch (err) {
-      console.error('GitHub Import Error:', err);
-      setImportMessage({
-        type: 'error',
-        text: err.response?.data?.message || 'Failed to fetch GitHub profile. Please check the username.'
-      });
+      console.error('GitHub Fetch Error:', err)
+      setGithubError(err.response?.data?.message || 'Could not fetch GitHub profile. Please check the username.')
     } finally {
-      setImporting(false);
+      setFetchingGithub(false)
     }
-  };
+  }
 
-  // Handle Save to MongoDB
-  const handleSaveToDatabase = async () => {
-    setSaving(true);
-    setSaveSuccess(null);
+  // Handle Save to Database
+  const handleSave = async () => {
+    setSaving(true)
+    setSavedSuccess(null)
+
+    const payload = {
+      slug: personal.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now().toString().slice(-4),
+      title: `${personal.name} Resume`,
+      mode,
+      template: selectedTemplate,
+      personalInfo: {
+        fullName: personal.name,
+        title: personal.title,
+        bio: personal.summary,
+        email: personal.email,
+        phone: personal.phone,
+        location: personal.location,
+        websiteUrl: personal.website,
+        linkedinUrl: personal.linkedin,
+        githubUsername: githubUser || ''
+      },
+      skills: {
+        languages: skills.slice(0, 8),
+        frameworks: skills.slice(8, 14),
+        tools: skills.slice(14)
+      },
+      experience: experience.map(exp => ({
+        company: exp.company,
+        role: exp.role,
+        duration: `${exp.start} - ${exp.end}`,
+        description: exp.bullets.join('. ')
+      })),
+      education: education.map(edu => ({
+        degree: edu.degree,
+        institution: edu.school,
+        year: `${edu.start} - ${edu.end}`,
+        score: edu.gpa
+      }))
+    }
 
     try {
-      const res = await portfolioApi.save(portfolio);
-      if (res.success && res.data) {
-        const savedId = res.data.slug || res.data._id;
-        setSavedSlug(savedId);
-        setSaveSuccess({
-          type: 'success',
-          id: savedId,
-          text: 'Saved successfully to MongoDB database!'
-        });
+      const res = await portfolioApi.save(payload)
+      if (res.success) {
+        setSavedSuccess('Saved successfully to MongoDB!')
+        setTimeout(() => setSavedSuccess(null), 4000)
       }
     } catch (err) {
-      console.error('Save error:', err);
-      setSaveSuccess({
-        type: 'error',
-        text: err.response?.data?.message || 'Error saving to database. Local draft remains saved!'
-      });
+      console.error('Save error:', err)
+      setSavedSuccess('Saved to local draft!')
+      setTimeout(() => setSavedSuccess(null), 3000)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
-  // Handlers for nested state updates
-  const updatePersonalInfo = (field, value) => {
-    setPortfolio(prev => ({
-      ...prev,
-      personalInfo: { ...prev.personalInfo, [field]: value }
-    }));
-  };
-
-  const updateSkills = (category, value) => {
-    const list = value.split(',').map(s => s.trim()).filter(Boolean);
-    setPortfolio(prev => ({
-      ...prev,
-      skills: { ...prev.skills, [category]: list }
-    }));
-  };
-
-  const addProject = () => {
-    const newProj = {
-      title: 'New Engineering Project',
-      description: 'Engineered high-performance web application utilizing modern full-stack best practices.',
-      repoUrl: '',
-      liveDemo: '',
-      technologies: ['React', 'Node.js', 'MongoDB'],
-      stars: 0,
-      pinned: false
-    };
-    setPortfolio(prev => ({ ...prev, projects: [newProj, ...prev.projects] }));
-  };
-
-  const updateProject = (index, field, value) => {
-    setPortfolio(prev => {
-      const updated = [...prev.projects];
-      if (field === 'technologies') {
-        updated[index][field] = value.split(',').map(t => t.trim()).filter(Boolean);
-      } else {
-        updated[index][field] = value;
-      }
-      return { ...prev, projects: updated };
-    });
-  };
-
-  const removeProject = (index) => {
-    setPortfolio(prev => ({
-      ...prev,
-      projects: prev.projects.filter((_, i) => i !== index)
-    }));
-  };
-
-  const resetToSample = () => {
-    if (window.confirm('Reset builder to default full-stack sample portfolio?')) {
-      setPortfolio(DEFAULT_PORTFOLIO);
-      setSavedSlug('aryan-sharma');
-      setImportMessage(null);
-      setSaveSuccess(null);
-    }
-  };
+  const handlePrint = () => {
+    window.print()
+  }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-black text-white font-sans overflow-hidden">
-      
-      {/* Top Studio Header */}
-      <header className="h-16 border-b border-neutral-900 bg-black/90 px-4 sm:px-6 flex items-center justify-between shrink-0 z-20">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="font-bold text-white tracking-tight flex items-center gap-2 text-sm hover:opacity-80 transition-opacity">
-            <span className="w-7 h-7 rounded-lg bg-gradient-to-tr from-white to-neutral-400 text-black flex items-center justify-center text-xs font-black">
-              C
-            </span>
-            <span className="elsie-black tracking-wider text-lg">CraftCV Studio</span>
+    <div className="bg-black min-h-screen text-white flex flex-col font-sans">
+
+      {/* Top Header */}
+      <header className="flex items-center justify-between px-6 h-16 border-b border-white/10 bg-black sticky top-0 z-40">
+        <div className="flex items-center gap-4">
+          <Link to="/dashboard" className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors text-sm">
+            <ChevronLeft size={16} />
+            Dashboard
           </Link>
-          <span className="hidden sm:inline text-xs text-neutral-600">|</span>
-          
-          {/* Template Switcher */}
-          <div className="hidden sm:flex items-center gap-2 bg-neutral-950 p-1.5 rounded-2xl border border-neutral-800 text-xs">
-            <span className="text-[11px] font-semibold text-neutral-400 pl-2 flex items-center gap-1">
-              <Palette className="w-3 h-3 text-neutral-400" />
-              Template:
-            </span>
-            <div className="flex items-center gap-1">
-              {[
-                { id: 'bento', label: 'Bento 3D', icon: Layers },
-                { id: 'terminal', label: 'CLI Terminal', icon: Terminal },
-                { id: 'executive', label: 'Executive', icon: FileText }
-              ].map(t => {
-                const Icon = t.icon;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setPortfolio(prev => ({ ...prev, template: t.id }))}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-xl font-medium transition-all cursor-pointer ${
-                      portfolio.template === t.id
-                        ? 'bg-white text-black font-semibold shadow-sm'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{t.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="w-px h-4 bg-white/10" />
+
+          {/* Builder Mode Switcher */}
+          <div className="flex items-center bg-[#111] p-1 rounded-2xl border border-white/10 text-xs">
+            <button
+              onClick={() => switchMode('manual')}
+              className={`px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer ${
+                mode === 'manual' ? 'bg-white text-black font-semibold' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              Manual Builder
+            </button>
+            <button
+              onClick={() => switchMode('github')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer ${
+                mode === 'github' ? 'bg-white text-black font-semibold' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              <Github size={12} />
+              <span>GitHub Fetch</span>
+            </button>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={resetToSample}
-            title="Load sample engineer profile"
-            className="flex items-center gap-1 px-3.5 py-1.5 rounded-3xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-medium border border-neutral-800 transition-all cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Sample Demo</span>
-          </button>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium text-green-400 bg-green-500/10 border-green-500/20">
+            <CheckCircle size={12} />
+            ATS Score: 94/100
+          </div>
 
           <button
-            onClick={() => setPreviewMode(!previewMode)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-3xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium border border-neutral-800 transition-all cursor-pointer"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>{previewMode ? 'Edit Mode' : 'Full Preview'}</span>
-          </button>
-
-          <button
-            onClick={handleSaveToDatabase}
+            onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-3xl bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-md cursor-pointer"
+            className="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-xl font-medium transition-colors cursor-pointer"
           >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             <span>{saving ? 'Saving...' : 'Save to DB'}</span>
           </button>
 
-          {savedSlug && (
-            <Link
-              to={`/portfolio/${savedSlug}`}
-              target="_blank"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-semibold border border-emerald-500/30 transition-all"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Live URL</span>
-            </Link>
-          )}
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 text-xs bg-white text-black px-4 py-2 rounded-xl font-semibold hover:bg-white/90 transition-colors cursor-pointer shadow-md"
+          >
+            <Download size={13} />
+            Export PDF
+          </button>
         </div>
       </header>
 
-      {/* Main Studio Body */}
-      <div className="flex-1 flex overflow-hidden">
-        
-        {/* Left Side: Editor Sidebar (hidden if full preview) */}
-        {!previewMode && (
-          <aside className="w-full lg:w-[480px] border-r border-neutral-800 bg-neutral-900 flex flex-col shrink-0">
-            {/* Sidebar Navigation Tabs */}
-            <div className="flex border-b border-neutral-800 bg-neutral-950 text-xs overflow-x-auto no-scrollbar">
-              {[
-                { id: 'templates', label: 'Templates', icon: Palette },
-                { id: 'import', label: '1-Click GitHub', icon: Github },
-                { id: 'profile', label: 'Basics', icon: User },
-                { id: 'skills', label: 'Skills', icon: Code2 },
-                { id: 'projects', label: 'Projects', icon: Layers },
-                { id: 'experience', label: 'Experience', icon: Briefcase },
-                { id: 'ai', label: 'Recruiter AI', icon: Bot },
-              ].map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-1.5 px-3.5 py-3 font-medium whitespace-nowrap border-b-2 transition-all cursor-pointer ${
-                      activeTab === tab.id
-                        ? 'border-white text-white bg-neutral-900 font-semibold'
-                        : 'border-transparent text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
+      {savedSuccess && (
+        <div className="bg-emerald-500/20 border-b border-emerald-500/30 text-emerald-300 text-xs py-2 px-6 text-center font-medium">
+          {savedSuccess}
+        </div>
+      )}
+
+      {/* Main Builder Body */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Left Sidebar: Sections & Templates */}
+        <aside className="hidden lg:flex flex-col w-56 border-r border-white/10 bg-black py-6 shrink-0">
+          
+          {mode === 'github' && (
+            <div className="mb-4 px-3">
+              <button
+                onClick={() => setActiveSection('github')}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium w-full text-left transition-all cursor-pointer ${
+                  activeSection === 'github'
+                    ? 'bg-white text-black font-semibold'
+                    : 'text-white/70 hover:bg-white/5'
+                }`}
+              >
+                <Github size={15} />
+                <span>GitHub Ingest</span>
+              </button>
             </div>
+          )}
 
-            {/* Editor Tab Content */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          <p className="text-[10px] uppercase tracking-widest text-white/30 px-5 mb-2">Sections</p>
+          {SECTIONS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveSection(id)}
+              className={`flex items-center gap-3 px-5 py-2.5 text-xs text-left w-full transition-colors cursor-pointer ${
+                activeSection === id
+                  ? 'text-white bg-white/10 border-r-2 border-white font-medium'
+                  : 'text-white/50 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Icon size={14} className="shrink-0" />
+              <span>{label}</span>
+            </button>
+          ))}
 
-              {/* TAB: Select Templates */}
-              {activeTab === 'templates' && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1">
-                    <span className="text-xs uppercase font-bold text-neutral-400 tracking-wider">Choose Theme</span>
-                    <h3 className="text-sm font-bold text-white">Select Your Portfolio Template</h3>
-                    <p className="text-xs text-neutral-400">
-                      Click any design to immediately switch the live preview on the right.
+          {/* Template Switcher */}
+          <div className="mt-auto px-5 pt-4 border-t border-white/10">
+            <p className="text-[10px] uppercase tracking-widest text-white/30 mb-2.5">Select Template</p>
+            <div className="grid grid-cols-2 gap-2">
+              {templatePreviews.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => setSelectedTemplate(t.id)}
+                  className={`rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                    selectedTemplate === t.id ? 'border-white scale-[1.03] shadow-md' : 'border-white/10 hover:border-white/30'
+                  }`}
+                >
+                  <img src={t.img} alt={t.name} className="w-full object-cover aspect-[3/4]" />
+                  <p className="text-[10px] text-center py-1 bg-[#111] text-white/70">{t.name}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        {/* Center: Active Section Editor Form */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-5">
+
+          {/* GITHUB MODE SECTION */}
+          {activeSection === 'github' && mode === 'github' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+              <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/10 space-y-3">
+                <div className="flex items-center gap-2.5 text-white">
+                  <Github size={20} />
+                  <h2 className="text-xl font-bold elsie-black">1-Click GitHub Ingestion</h2>
+                </div>
+                <p className="text-xs text-white/60 leading-relaxed max-w-xl">
+                  Enter your GitHub username. We will automatically inspect your public repositories, extract top projects, calculate language usage stats, and populate your resume fields immediately.
+                </p>
+
+                <form onSubmit={handleGithubFetch} className="flex gap-3 pt-2">
+                  <div className="relative flex-1">
+                    <Github className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={15} />
+                    <input
+                      type="text"
+                      value={githubUser}
+                      onChange={(e) => setGithubUser(e.target.value)}
+                      placeholder="e.g. torvalds, shadcn, or your username"
+                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 w-full text-white placeholder-white/30 focus:outline-none focus:border-white/30 text-sm"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={fetchingGithub || !githubUser.trim()}
+                    className="bg-white text-black px-6 py-3 rounded-xl font-semibold text-xs hover:bg-white/90 disabled:opacity-40 transition-all flex items-center gap-2 cursor-pointer shrink-0"
+                  >
+                    {fetchingGithub ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                    <span>{fetchingGithub ? 'Ingesting...' : 'Fetch Profile'}</span>
+                  </button>
+                </form>
+
+                {githubError && (
+                  <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl">
+                    {githubError}
+                  </p>
+                )}
+
+                {githubResult && (
+                  <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-xs text-green-300 space-y-1">
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <Check size={14} />
+                      Successfully imported {githubResult.reposCount} projects from GitHub!
+                    </p>
+                    <p className="text-white/60">
+                      Auto-detected languages: {githubResult.languages.join(', ')}. Check the preview on the right!
                     </p>
                   </div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
-                  <div className="space-y-3">
-                    {[
-                      {
-                        id: 'bento',
-                        title: 'Modern Bento 3D Grid',
-                        desc: 'Sleek dark-mode Bento boxes with ambient glowing backdrops, project badges, and verified links.',
-                        badge: 'Recommended',
-                        icon: Layers,
-                        accent: 'from-blue-600 to-indigo-600'
-                      },
-                      {
-                        id: 'terminal',
-                        title: 'Hacker CLI Terminal',
-                        desc: 'Interactive terminal emulator where recruiters can execute bash commands (help, bio, skills, projects).',
-                        badge: 'Interactive',
-                        icon: Terminal,
-                        accent: 'from-emerald-600 to-teal-600'
-                      },
-                      {
-                        id: 'executive',
-                        title: 'Executive Minimalist',
-                        desc: 'Clean, publication-grade resume and portfolio layout designed for ATS scanning and direct PDF printing.',
-                        badge: 'ATS Ready',
-                        icon: FileText,
-                        accent: 'from-purple-600 to-pink-600'
-                      }
-                    ].map(tmpl => {
-                      const Icon = tmpl.icon;
-                      const isSelected = portfolio.template === tmpl.id;
-                      return (
-                        <div
-                          key={tmpl.id}
-                          onClick={() => setPortfolio(prev => ({ ...prev, template: tmpl.id }))}
-                          className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
-                            isSelected
-                              ? 'bg-neutral-900 border-white shadow-xl shadow-white/5 ring-1 ring-white/20'
-                              : 'bg-neutral-950/80 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900/60'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3 mb-2">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${tmpl.accent} flex items-center justify-center text-white shadow-md`}>
-                                <Icon className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                  {tmpl.title}
-                                </h4>
-                                <span className="text-[10px] font-semibold text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-700">
-                                  {tmpl.badge}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                              isSelected ? 'border-white bg-white text-black' : 'border-neutral-700'
-                            }`}>
-                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                            </div>
-                          </div>
-
-                          <p className="text-xs text-neutral-400 leading-relaxed pl-12">
-                            {tmpl.desc}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
+          {/* PERSONAL INFO SECTION */}
+          {activeSection === 'personal' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <h2 className="text-xl elsie-black text-white">Personal Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-white/40">Full Name</label>
+                  <input
+                    type="text"
+                    value={personal.name}
+                    onChange={(e) => setPersonal({ ...personal, name: e.target.value })}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30"
+                  />
                 </div>
-              )}
-              
-              {/* TAB 1: 1-Click GitHub Import */}
-              {activeTab === 'import' && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-tr from-blue-950/40 to-indigo-950/40 border border-blue-500/30 space-y-2">
-                    <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
-                      <Sparkles className="w-4 h-4 text-amber-300" />
-                      Zero-Typing GitHub Ingestion
-                    </div>
-                    <p className="text-xs text-neutral-300 leading-relaxed">
-                      Enter any public GitHub handle. CraftCV automatically queries the GitHub API, computes your primary tech stack from repositories, extracts stars & descriptions, and builds your portfolio.
-                    </p>
-                  </div>
-
-                  <form onSubmit={handleGithubImport} className="space-y-3">
-                    <label className="text-xs font-semibold text-neutral-300 block">
-                      GitHub Username
-                    </label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Github className="w-4 h-4 text-neutral-500 absolute left-3 top-3" />
-                        <input
-                          type="text"
-                          value={githubUser}
-                          onChange={(e) => setGithubUser(e.target.value)}
-                          placeholder="e.g. facebook, shadcn, or your username"
-                          className="w-full bg-neutral-950 border border-neutral-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={importing || !githubUser.trim()}
-                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0"
-                      >
-                        {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                        <span>{importing ? 'Ingesting...' : 'Import'}</span>
-                      </button>
-                    </div>
-                  </form>
-
-                  {importMessage && (
-                    <div className={`p-3 rounded-xl text-xs flex items-start gap-2 ${
-                      importMessage.type === 'success' 
-                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-                        : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
-                    }`}>
-                      {importMessage.type === 'success' ? <Check className="w-4 h-4 shrink-0 mt-0.5" /> : null}
-                      <span>{importMessage.text}</span>
-                    </div>
-                  )}
-
-                  {saveSuccess && (
-                    <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-300 flex items-center justify-between">
-                      <span>{saveSuccess.text}</span>
-                      <Link
-                        to={`/portfolio/${saveSuccess.id}`}
-                        target="_blank"
-                        className="font-bold underline text-white hover:text-blue-200"
-                      >
-                        Open Live
-                      </Link>
-                    </div>
-                  )}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-white/40">Professional Title</label>
+                  <input
+                    type="text"
+                    value={personal.title}
+                    onChange={(e) => setPersonal({ ...personal, title: e.target.value })}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30"
+                  />
                 </div>
-              )}
-
-              {/* TAB 2: Personal Profile */}
-              {activeTab === 'profile' && (
-                <div className="space-y-3.5 text-xs">
-                  <div>
-                    <label className="text-neutral-400 font-medium block mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      value={portfolio.personalInfo?.fullName || ''}
-                      onChange={(e) => updatePersonalInfo('fullName', e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-400 font-medium block mb-1">Professional Title</label>
-                    <input
-                      type="text"
-                      value={portfolio.personalInfo?.title || ''}
-                      onChange={(e) => updatePersonalInfo('title', e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-400 font-medium block mb-1">Bio / Summary</label>
-                    <textarea
-                      rows={3}
-                      value={portfolio.personalInfo?.bio || ''}
-                      onChange={(e) => updatePersonalInfo('bio', e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-neutral-400 font-medium block mb-1">Email</label>
-                      <input
-                        type="email"
-                        value={portfolio.personalInfo?.email || ''}
-                        onChange={(e) => updatePersonalInfo('email', e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-neutral-400 font-medium block mb-1">Location</label>
-                      <input
-                        type="text"
-                        value={portfolio.personalInfo?.location || ''}
-                        onChange={(e) => updatePersonalInfo('location', e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-400 font-medium block mb-1">Avatar Image URL</label>
-                    <input
-                      type="text"
-                      value={portfolio.personalInfo?.avatarUrl || ''}
-                      onChange={(e) => updatePersonalInfo('avatarUrl', e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div>
-                      <label className="text-neutral-400 font-medium block mb-1">GitHub Username</label>
-                      <input
-                        type="text"
-                        value={portfolio.personalInfo?.githubUsername || ''}
-                        onChange={(e) => updatePersonalInfo('githubUsername', e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-neutral-400 font-medium block mb-1">LinkedIn URL</label>
-                      <input
-                        type="text"
-                        value={portfolio.personalInfo?.linkedinUrl || ''}
-                        onChange={(e) => updatePersonalInfo('linkedinUrl', e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-white/40">Email Address</label>
+                  <input
+                    type="email"
+                    value={personal.email}
+                    onChange={(e) => setPersonal({ ...personal, email: e.target.value })}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30"
+                  />
                 </div>
-              )}
-
-              {/* TAB 3: Skills */}
-              {activeTab === 'skills' && (
-                <div className="space-y-4 text-xs">
-                  <div>
-                    <label className="text-neutral-300 font-semibold block mb-1">
-                      Programming Languages (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={(portfolio.skills?.languages || []).join(', ')}
-                      onChange={(e) => updateSkills('languages', e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-300 font-semibold block mb-1">
-                      Frameworks & Libraries (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={(portfolio.skills?.frameworks || []).join(', ')}
-                      onChange={(e) => updateSkills('frameworks', e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-300 font-semibold block mb-1">
-                      Tools, Databases & Cloud (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={(portfolio.skills?.tools || []).join(', ')}
-                      onChange={(e) => updateSkills('tools', e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-white/40">Phone Number</label>
+                  <input
+                    type="text"
+                    value={personal.phone}
+                    onChange={(e) => setPersonal({ ...personal, phone: e.target.value })}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30"
+                  />
                 </div>
-              )}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-white/40">Location</label>
+                  <input
+                    type="text"
+                    value={personal.location}
+                    onChange={(e) => setPersonal({ ...personal, location: e.target.value })}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-white/40">Website / Portfolio</label>
+                  <input
+                    type="text"
+                    value={personal.website}
+                    onChange={(e) => setPersonal({ ...personal, website: e.target.value })}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
 
-              {/* TAB 4: Projects */}
-              {activeTab === 'projects' && (
-                <div className="space-y-4 text-xs">
+          {/* SUMMARY SECTION */}
+          {activeSection === 'summary' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <h2 className="text-xl elsie-black text-white">Professional Summary</h2>
+              <textarea
+                rows={5}
+                value={personal.summary}
+                onChange={(e) => setPersonal({ ...personal, summary: e.target.value })}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-white/30 w-full leading-relaxed"
+              />
+            </motion.div>
+          )}
+
+          {/* EXPERIENCE SECTION */}
+          {activeSection === 'experience' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl elsie-black text-white">Work Experience</h2>
+                <button
+                  onClick={() => setExperience([
+                    {
+                      id: Date.now(),
+                      company: 'New Company',
+                      role: 'Software Engineer',
+                      start: '2024',
+                      end: 'Present',
+                      location: 'Remote',
+                      bullets: ['Engineered scalable features and improved performance.']
+                    },
+                    ...experience
+                  ])}
+                  className="flex items-center gap-1.5 text-xs border border-white/20 text-white/70 hover:border-white hover:text-white px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                >
+                  <Plus size={13} />
+                  Add Position
+                </button>
+              </div>
+
+              {experience.map((exp, expIdx) => (
+                <div key={exp.id} className="border border-white/10 rounded-2xl p-5 space-y-3 bg-[#0a0a0a]">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-300">
-                      Projects ({portfolio.projects?.length || 0})
-                    </span>
+                    <p className="text-sm font-semibold text-white">{exp.role} at {exp.company}</p>
                     <button
-                      onClick={addProject}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium cursor-pointer"
+                      onClick={() => setExperience(experience.filter((_, i) => i !== expIdx))}
+                      className="text-white/30 hover:text-rose-400 p-1 cursor-pointer transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      Add Project
+                      <Trash2 size={14} />
                     </button>
                   </div>
-
-                  {(portfolio.projects || []).map((proj, idx) => (
-                    <div key={idx} className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2.5 relative group">
-                      <div className="flex items-center justify-between">
-                        <input
-                          type="text"
-                          value={proj.title}
-                          onChange={(e) => updateProject(idx, 'title', e.target.value)}
-                          className="bg-transparent font-bold text-white text-xs focus:outline-none border-b border-transparent focus:border-blue-500 w-3/4"
-                        />
-                        <button
-                          onClick={() => removeProject(idx)}
-                          className="text-neutral-500 hover:text-rose-400 p-1 cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      <textarea
-                        rows={2}
-                        value={proj.description}
-                        onChange={(e) => updateProject(idx, 'description', e.target.value)}
-                        placeholder="Project description..."
-                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-neutral-300 focus:outline-none focus:border-blue-500 text-[11px]"
-                      />
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={proj.repoUrl || ''}
-                          onChange={(e) => updateProject(idx, 'repoUrl', e.target.value)}
-                          placeholder="Repository URL"
-                          className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-neutral-300 focus:outline-none text-[11px]"
-                        />
-                        <input
-                          type="text"
-                          value={proj.liveDemo || ''}
-                          onChange={(e) => updateProject(idx, 'liveDemo', e.target.value)}
-                          placeholder="Live Demo URL"
-                          className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-neutral-300 focus:outline-none text-[11px]"
-                        />
-                      </div>
-
-                      <input
-                        type="text"
-                        value={(proj.technologies || []).join(', ')}
-                        onChange={(e) => updateProject(idx, 'technologies', e.target.value)}
-                        placeholder="Tech stack (e.g. React, Node, Redis)"
-                        className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-neutral-300 focus:outline-none text-[11px]"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* TAB 5: Experience & Education */}
-              {activeTab === 'experience' && (
-                <div className="space-y-4 text-xs">
-                  <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2">
-                    <span className="font-semibold text-neutral-300 block">Work Experience</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <input
                       type="text"
-                      value={portfolio.experience?.[0]?.role || ''}
+                      value={exp.company}
                       onChange={(e) => {
-                        const val = e.target.value;
-                        setPortfolio(prev => {
-                          const updated = [...(prev.experience || [{ company: '', role: '' }])];
-                          updated[0].role = val;
-                          return { ...prev, experience: updated };
-                        });
+                        const copy = [...experience]
+                        copy[expIdx].company = e.target.value
+                        setExperience(copy)
                       }}
-                      placeholder="Role (e.g. Software Engineer Intern)"
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-white"
+                      placeholder="Company"
+                      className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"
                     />
-                    <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={exp.role}
+                      onChange={(e) => {
+                        const copy = [...experience]
+                        copy[expIdx].role = e.target.value
+                        setExperience(copy)
+                      }}
+                      placeholder="Job Title"
+                      className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] text-white/40">Bullet Points</label>
+                    {exp.bullets.map((b, bIdx) => (
                       <input
-                        type="text"
-                        value={portfolio.experience?.[0]?.company || ''}
+                        key={bIdx}
+                        value={b}
                         onChange={(e) => {
-                          const val = e.target.value;
-                          setPortfolio(prev => {
-                            const updated = [...(prev.experience || [{ company: '', role: '' }])];
-                            updated[0].company = val;
-                            return { ...prev, experience: updated };
-                          });
+                          const copy = [...experience]
+                          copy[expIdx].bullets[bIdx] = e.target.value
+                          setExperience(copy)
                         }}
-                        placeholder="Company"
-                        className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-white"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none"
                       />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* EDUCATION SECTION */}
+          {activeSection === 'education' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <h2 className="text-xl elsie-black text-white">Education</h2>
+              {education.map((edu, idx) => (
+                <div key={edu.id} className="border border-white/10 rounded-2xl p-5 space-y-3 bg-[#0a0a0a]">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-white/40">School / University</label>
                       <input
                         type="text"
-                        value={portfolio.experience?.[0]?.duration || ''}
+                        value={edu.school}
                         onChange={(e) => {
-                          const val = e.target.value;
-                          setPortfolio(prev => {
-                            const updated = [...(prev.experience || [{ company: '', role: '' }])];
-                            updated[0].duration = val;
-                            return { ...prev, experience: updated };
-                          });
+                          const copy = [...education]
+                          copy[idx].school = e.target.value
+                          setEducation(copy)
                         }}
-                        placeholder="Duration (e.g. May 2025 - Present)"
-                        className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-white"
+                        className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"
                       />
                     </div>
-                    <textarea
-                      rows={2}
-                      value={portfolio.experience?.[0]?.description || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setPortfolio(prev => {
-                          const updated = [...(prev.experience || [{ company: '', role: '' }])];
-                          updated[0].description = val;
-                          return { ...prev, experience: updated };
-                        });
-                      }}
-                      placeholder="Summary of responsibilities..."
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-white"
-                    />
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 space-y-2">
-                    <span className="font-semibold text-neutral-300 block">Education</span>
-                    <input
-                      type="text"
-                      value={portfolio.education?.[0]?.degree || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setPortfolio(prev => {
-                          const updated = [...(prev.education || [{ degree: '', institution: '' }])];
-                          updated[0].degree = val;
-                          return { ...prev, education: updated };
-                        });
-                      }}
-                      placeholder="Degree (e.g. B.Tech Computer Science)"
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-white"
-                    />
-                    <input
-                      type="text"
-                      value={portfolio.education?.[0]?.institution || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setPortfolio(prev => {
-                          const updated = [...(prev.education || [{ degree: '', institution: '' }])];
-                          updated[0].institution = val;
-                          return { ...prev, education: updated };
-                        });
-                      }}
-                      placeholder="University / Institute"
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2 text-white"
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-white/40">Degree</label>
+                      <input
+                        type="text"
+                        value={edu.degree}
+                        onChange={(e) => {
+                          const copy = [...education]
+                          copy[idx].degree = e.target.value
+                          setEducation(copy)
+                        }}
+                        className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
-              )}
+              ))}
+            </motion.div>
+          )}
 
-              {/* TAB 6: AI Recruiter Assistant */}
-              {activeTab === 'ai' && (
-                <div className="space-y-4 text-xs">
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 to-blue-950/40 border border-purple-500/30 space-y-2">
-                    <div className="flex items-center gap-2 text-purple-400 font-bold">
-                      <Bot className="w-4 h-4" />
-                      Candidate AI "Digital Twin"
-                    </div>
-                    <p className="text-neutral-300 leading-relaxed text-[11px]">
-                      When visitors view your portfolio, they can converse with this autonomous recruiter agent. It automatically draws facts from your GitHub projects and skills.
-                    </p>
+          {/* SKILLS SECTION */}
+          {activeSection === 'skills' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <h2 className="text-xl elsie-black text-white">Skills & Technologies</h2>
+              <div className="flex flex-wrap gap-2 p-4 border border-white/10 rounded-2xl min-h-28 bg-[#0a0a0a]">
+                {skills.map((s, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5 bg-white/10 border border-white/15 rounded-xl px-3 py-1.5 text-xs text-white">
+                    <span>{s}</span>
+                    <button
+                      onClick={() => setSkills(skills.filter((_, i) => i !== idx))}
+                      className="text-white/40 hover:text-rose-400 cursor-pointer transition-colors"
+                    >
+                      <Minus size={11} />
+                    </button>
                   </div>
+                ))}
+                <input
+                  placeholder="+ Type skill & press Enter..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.target.value.trim()) {
+                      setSkills([...skills, e.target.value.trim()])
+                      e.target.value = ''
+                    }
+                  }}
+                  className="bg-transparent text-white text-xs placeholder-white/20 focus:outline-none px-2 py-1.5 min-w-[150px]"
+                />
+              </div>
+            </motion.div>
+          )}
 
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-neutral-950 border border-neutral-800">
-                    <div>
-                      <span className="font-semibold text-neutral-200 block">Enable Recruiter AI</span>
-                      <span className="text-[11px] text-neutral-400">Renders floating chat bubble on your live portfolio</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={portfolio.aiSettings?.enabled ?? true}
-                      onChange={(e) => {
-                        const val = e.target.checked;
-                        setPortfolio(prev => ({
-                          ...prev,
-                          aiSettings: { ...prev.aiSettings, enabled: val }
-                        }));
-                      }}
-                      className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
-                    />
-                  </div>
+        </main>
 
-                  <div>
-                    <label className="text-neutral-400 font-medium block mb-1">Custom Recruiter Welcome Message</label>
-                    <textarea
-                      rows={3}
-                      value={portfolio.aiSettings?.welcomeMessage || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setPortfolio(prev => ({
-                          ...prev,
-                          aiSettings: { ...prev.aiSettings, welcomeMessage: val }
-                        }));
-                      }}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg p-2.5 text-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </aside>
-        )}
-
-        {/* Right Side: Live Synchronized Preview */}
-        <main className="flex-1 bg-neutral-950 overflow-y-auto relative">
-          <div className="w-full h-full">
-            {portfolio.template === 'terminal' ? (
-              <TerminalTemplate portfolio={portfolio} />
-            ) : portfolio.template === 'executive' ? (
-              <ExecutiveTemplate portfolio={portfolio} />
-            ) : (
-              <BentoTemplate portfolio={portfolio} />
-            )}
+        {/* Right Side: Live Resume Preview */}
+        <aside className="hidden xl:flex flex-col w-[480px] border-l border-white/10 bg-[#0a0a0a] shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <span className="text-sm font-medium text-white flex items-center gap-2">
+              <Eye size={14} className="text-white/50" />
+              Live Preview
+            </span>
+            <span className="text-xs text-white/40">
+              Template: <span className="text-white font-medium uppercase tracking-wider">{selectedTemplate}</span>
+            </span>
           </div>
 
-          {/* Embedded Recruiter Chatbot Preview */}
-          <RecruiterChatbot portfolio={portfolio} />
-        </main>
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="transform scale-[0.74] origin-top-left w-[135%]">
+              {/* Clean Styled Resume Sheet */}
+              <div className="bg-white rounded-xl shadow-2xl overflow-hidden text-black font-serif">
+                <div className="bg-gray-950 text-white px-8 py-7">
+                  <h1 className="text-2xl font-bold tracking-tight">{personal.name}</h1>
+                  <p className="text-sm text-gray-300 mt-0.5">{personal.title}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-gray-400">
+                    {personal.email && <span>{personal.email}</span>}
+                    {personal.phone && <span>{personal.phone}</span>}
+                    {personal.location && <span>{personal.location}</span>}
+                    {personal.website && <span>{personal.website}</span>}
+                  </div>
+                </div>
+
+                <div className="px-8 py-6 space-y-5 text-[11px] leading-relaxed">
+                  {personal.summary && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 mb-2 font-sans font-semibold">
+                        Summary
+                      </p>
+                      <p className="text-gray-700">{personal.summary}</p>
+                    </div>
+                  )}
+
+                  {experience.length > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 mb-3 font-sans font-semibold">
+                        Experience & Highlights
+                      </p>
+                      <div className="space-y-4">
+                        {experience.map((exp) => (
+                          <div key={exp.id}>
+                            <div className="flex justify-between items-baseline">
+                              <p className="font-bold text-gray-900 text-xs">{exp.role}</p>
+                              <p className="text-gray-400 text-[10px]">{exp.start} – {exp.end}</p>
+                            </div>
+                            <p className="text-gray-500">{exp.company} {exp.location ? `· ${exp.location}` : ''}</p>
+                            <ul className="mt-1.5 space-y-1 list-disc list-inside text-gray-700">
+                              {exp.bullets.map((b, i) => (
+                                <li key={i}>{b}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {education.length > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 mb-2 font-sans font-semibold">
+                        Education
+                      </p>
+                      {education.map((edu) => (
+                        <div key={edu.id} className="flex justify-between items-baseline">
+                          <div>
+                            <p className="font-bold text-gray-900 text-xs">{edu.degree}</p>
+                            <p className="text-gray-500">{edu.school}</p>
+                          </div>
+                          <p className="text-gray-400 text-[10px]">{edu.start} – {edu.end}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {skills.length > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 mb-2 font-sans font-semibold">
+                        Skills
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {skills.map((s, i) => (
+                          <span key={i} className="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full text-[10px]">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
 
       </div>
     </div>
-  );
-};
-
-export default Builder;
+  )
+}

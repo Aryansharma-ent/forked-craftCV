@@ -11,7 +11,6 @@ import {   FaUserDoctor,
   FaChartLine,
   FaCamera,
   FaPenNib,
-  FaStethoscope,
   FaLaptopCode } from 'react-icons/fa6';
   import BlurText from './BlurText';
 
