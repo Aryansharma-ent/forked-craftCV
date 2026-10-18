@@ -93,6 +93,32 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* AI Viva & Interview Prep Banner */}
+        <div className="mt-8 p-6 md:p-8 rounded-3xl bg-gradient-to-r from-purple-950/40 via-[#0d0a14] to-[#0a0a0a] border border-purple-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
+          <div className="space-y-2 max-w-xl">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full border border-purple-400/40 bg-purple-500/20 text-purple-300 font-semibold">
+                New Feature
+              </span>
+              <span className="text-xs text-white/50">Gemini 2.5 Powered</span>
+            </div>
+            <h3 className="text-xl md:text-2xl font-bold elsie-black text-white">
+              AI Interview &amp; College Viva Simulator
+            </h3>
+            <p className="text-xs md:text-sm text-white/60 leading-relaxed">
+              Don't just make resumes — defend them. Generate challenging technical viva questions, CS fundamentals, and project deep-dives grounded in your actual resume claims.
+            </p>
+          </div>
+
+          <Link
+            to="/interview"
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-black font-semibold text-xs hover:bg-white/90 transition-all shadow-md shrink-0 cursor-pointer"
+          >
+            <span>Launch Viva Simulator</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
         {/* Your Resumes */}
         <h2 className="text-2xl elsie-black text-white mt-12 mb-6">Your Resumes</h2>
 

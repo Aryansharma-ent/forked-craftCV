@@ -9,6 +9,7 @@ import Dashboard from "./Pages/Dashboard";
 import Pricing from "./Pages/Pricing";
 import NotFound from "./Pages/NotFound";
 import PortfolioView from "./Pages/PortfolioView";
+import InterviewPrep from "./Pages/InterviewPrep";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <Route path="/builder" element={<Builder />} />
       <Route path="/templates" element={<Templates />} />
       <Route path="/portfolio/:id" element={<PortfolioView />} />
+      <Route path="/interview" element={<InterviewPrep />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/dashboard" element={<Dashboard />} />

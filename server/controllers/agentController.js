@@ -164,3 +164,221 @@ You MUST respond strictly with valid JSON conforming to this format (no markdown
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const generateInterviewQuestions = async (req, res) => {
+  try {
+    const { resumeData = {}, targetRole = 'Software Engineer', interviewType = 'viva' } = req.body;
+    const { personal = {}, experience = [], education = [], skills = [] } = resumeData;
+    const effectiveApiKey = process.env.GEMINI_API_KEY;
+
+    if (effectiveApiKey) {
+      try {
+        const prompt = `You are a Senior Principal Engineer and Academic External Examiner conducting a technical viva / interview.
+Analyze the candidate's resume below and generate 4 realistic, challenging interview/viva questions specifically targeting their technical stack, projects, and architecture decisions.
+
+Candidate Profile:
+Name: ${personal.name || 'Candidate'}
+Title: ${personal.title || targetRole}
+Skills: ${(skills || []).join(', ')}
+Experience & Projects: ${JSON.stringify(experience)}
+Target Role / Mode: ${targetRole} (${interviewType} defense)
+
+Question Requirements:
+1. Deep-dive into a specific project/metric they claimed on their resume (ask how they implemented it, architectural trade-offs, scalability).
+2. Deep CS / Systems fundamental question directly relevant to their tech stack (e.g., if Redis: cache coherence, if React: virtual DOM/reconciliation, if Docker/K8s: container isolation/cgroups).
+3. System design or failure scenario (e.g. what happens when a database shard fails, or network latency spikes).
+4. Academic / Viva defense question: asking to justify why they chose a specific technology over alternatives.
+
+You MUST respond strictly with valid JSON conforming to this schema (no markdown, no backticks):
+{
+  "questions": [
+    {
+      "id": 1,
+      "category": "Project Deep-Dive | CS Fundamentals | System Architecture | Viva Defense",
+      "difficulty": "Medium | Hard",
+      "question": "string",
+      "whyAsked": "1 sentence explaining why an interviewer or professor asks this based on their resume",
+      "keyConcepts": ["string", "string"],
+      "sampleAnswer": "Comprehensive 3-4 sentence model answer explaining how a top-tier candidate answers this"
+    }
+  ]
+}`;
+
+        for (const model of ['gemini-2.5-flash', 'gemini-1.5-flash']) {
+          try {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
+            const response = await axios.post(
+              geminiUrl,
+              {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                  temperature: 0.3
+                }
+              },
+              { timeout: 20000 }
+            );
+
+            const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              const parsed = JSON.parse(rawText);
+              return res.status(200).json({
+                success: true,
+                source: 'gemini-live',
+                data: parsed.questions || []
+              });
+            }
+          } catch (modelErr) {
+            console.warn(`[Interview Gen Model ${model} Warning]:`, modelErr.message);
+          }
+        }
+      } catch (geminiErr) {
+        console.warn('[Interview Gen Gemini Error]:', geminiErr.message);
+      }
+    }
+
+    // Intelligent Offline Fallback for Interview Questions
+    const topSkills = (skills && skills.length > 0 ? skills.slice(0, 3) : ['Node.js', 'React', 'MongoDB']).join(', ');
+    const fallbackQuestions = [
+      {
+        id: 1,
+        category: 'Project Deep-Dive',
+        difficulty: 'Medium',
+        question: `In your recent engineering work with ${topSkills}, how did you ensure data consistency and handle asynchronous service errors?`,
+        whyAsked: 'Evaluates your practical understanding of error boundaries, try/catch mechanisms, and distributed state.',
+        keyConcepts: ['Idempotency', 'Graceful Degradation', 'Exponential Backoff'],
+        sampleAnswer: 'We implemented centralized error middleware coupled with structured logging. For external async calls, we utilized idempotency keys and retry policies with exponential backoff to prevent duplicate writes.'
+      },
+      {
+        id: 2,
+        category: 'CS Fundamentals & Architecture',
+        difficulty: 'Hard',
+        question: `When scaling your backend data layer, what indexing strategies did you employ, and what are the trade-offs between B-Tree and Hash indexes?`,
+        whyAsked: 'Professors and senior interviewers test your foundational knowledge of database internals and query execution plans.',
+        keyConcepts: ['B-Tree vs Hash Indexing', 'Index Selectivity', 'Read vs Write Overhead'],
+        sampleAnswer: 'B-Tree indexes support both range queries and equality lookups (O(log n)), making them ideal for timestamps and sequential IDs. Hash indexes offer O(1) equality lookups but do not support range scans. Every index also adds write latency due to tree rebalancing.'
+      },
+      {
+        id: 3,
+        category: 'Viva Defense',
+        difficulty: 'Medium',
+        question: `Why did you select your current technology stack over alternative paradigms (e.g. monolithic vs microservices, or SQL vs NoSQL)?`,
+        whyAsked: 'Crucial for final year project defense to demonstrate you didn’t just follow a tutorial but understood architectural trade-offs.',
+        keyConcepts: ['Schema Flexibility', 'Horizontal vs Vertical Scaling', 'Operational Complexity'],
+        sampleAnswer: 'We chose a document-based NoSQL model because the data entities possessed dynamic nested attributes with high read frequency, avoiding expensive multi-table relational joins during peak traffic.'
+      }
+    ];
+
+    return res.status(200).json({
+      success: true,
+      source: 'smart-engine',
+      data: fallbackQuestions
+    });
+
+  } catch (error) {
+    console.error('[Interview Gen Error]:', error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const evaluateInterviewAnswer = async (req, res) => {
+  try {
+    const { question, candidateAnswer, targetRole = 'Software Engineer' } = req.body;
+
+    if (!question || !candidateAnswer || !candidateAnswer.trim()) {
+      return res.status(400).json({ success: false, message: 'Please provide both the question and your answer.' });
+    }
+
+    const effectiveApiKey = process.env.GEMINI_API_KEY;
+
+    if (effectiveApiKey) {
+      try {
+        const prompt = `You are a Senior Principal Technical Interviewer and CSE Academic Viva Examiner.
+Evaluate the candidate's answer to the following technical question for a ${targetRole} role.
+
+Question:
+"""${question}"""
+
+Candidate's Answer:
+"""${candidateAnswer}"""
+
+Evaluation Rubric:
+1. "score": An integer from 1 to 10 based on technical depth, accuracy, clarity, and architectural soundness.
+2. "verdict": Short punchy summary (e.g. "Excellent Technical Depth", "Solid Answer with Minor Gaps", "Needs Stronger Fundamentals").
+3. "strengths": Array of 1-3 specific strong points in their explanation.
+4. "improvements": Array of 1-3 specific technical concepts or details they missed or could improve.
+5. "idealAnswer": 3-4 sentence comprehensive model answer demonstrating senior engineer caliber.
+6. "vivaTip": 1 punchy tip on how to present this answer confidently in front of a professor or hiring manager.
+
+You MUST respond strictly with valid JSON conforming to this schema (no markdown, no backticks):
+{
+  "score": 8,
+  "verdict": "string",
+  "strengths": ["string"],
+  "improvements": ["string"],
+  "idealAnswer": "string",
+  "vivaTip": "string"
+}`;
+
+        for (const model of ['gemini-2.5-flash', 'gemini-1.5-flash']) {
+          try {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
+            const response = await axios.post(
+              geminiUrl,
+              {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                  temperature: 0.2
+                }
+              },
+              { timeout: 20000 }
+            );
+
+            const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              const parsed = JSON.parse(rawText);
+              return res.status(200).json({
+                success: true,
+                source: 'gemini-live',
+                data: parsed
+              });
+            }
+          } catch (modelErr) {
+            console.warn(`[Interview Eval Model ${model} Warning]:`, modelErr.message);
+          }
+        }
+      } catch (geminiErr) {
+        console.warn('[Interview Eval Gemini Error]:', geminiErr.message);
+      }
+    }
+
+    // Algorithmic Fallback Evaluation
+    const wordCount = candidateAnswer.trim().split(/\s+/).length;
+    const hasTechnicalKeywords = /scale|latency|cache|database|async|concurrency|index|microservice|throughput|memory/i.test(candidateAnswer);
+    const score = Math.min(10, Math.max(5, (wordCount > 30 ? 6 : 4) + (hasTechnicalKeywords ? 3 : 1)));
+
+    return res.status(200).json({
+      success: true,
+      source: 'smart-engine',
+      data: {
+        score,
+        verdict: score >= 8 ? 'Strong Technical Explanation' : 'Good Foundation — Add Architecture Specifics',
+        strengths: [
+          'Directly addressed the core question',
+          hasTechnicalKeywords ? 'Used relevant systems terminology' : 'Clear communication style'
+        ],
+        improvements: [
+          'Quantify metrics and throughput where applicable',
+          'Mention edge cases and failure modes (e.g. connection pool exhaustion)'
+        ],
+        idealAnswer: 'A high-scoring answer outlines the architectural trade-offs, specifies data flow and protocols, and concludes with how monitoring/metrics verify system health.',
+        vivaTip: 'Structure your viva answers with: 1) Core definition, 2) Trade-offs, and 3) Practical example from your project.'
+      }
+    });
+
+  } catch (error) {
+    console.error('[Interview Eval Error]:', error.message);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

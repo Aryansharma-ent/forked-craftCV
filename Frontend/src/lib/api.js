@@ -68,6 +68,16 @@ export const agentApi = {
       method: 'POST',
       body: JSON.stringify({ instruction, currentResume, apiKey }),
     }),
+  generateInterview: (resumeData, targetRole, interviewType) =>
+    request('/agent/interview', {
+      method: 'POST',
+      body: JSON.stringify({ resumeData, targetRole, interviewType }),
+    }),
+  evaluateAnswer: (question, candidateAnswer, targetRole) =>
+    request('/agent/evaluate-answer', {
+      method: 'POST',
+      body: JSON.stringify({ question, candidateAnswer, targetRole }),
+    }),
 };
 
 export default { authApi, portfolioApi, githubApi, agentApi };

@@ -25,7 +25,8 @@ import {
   LuRotateCcw as RotateCcw,
   LuSend as Send,
   LuCpu as Cpu,
-  LuWandSparkles as Wand2
+  LuWandSparkles as Wand2,
+  LuArrowRight as ArrowRight
 } from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
 import { githubApi, portfolioApi, agentApi } from '../lib/api'
@@ -223,6 +224,13 @@ export default function Builder() {
   // Live dynamic ATS score calculation
   const ats = useMemo(() => {
     return calculateAtsScore({ personal, experience, education, skills })
+  }, [personal, experience, education, skills])
+
+  // Sync active resume snapshot for Interview Prep & Viva Simulator
+  useEffect(() => {
+    try {
+      localStorage.setItem('craftcv_current_resume', JSON.stringify({ personal, experience, education, skills }))
+    } catch (e) {}
   }, [personal, experience, education, skills])
 
   // Sync mode changes with URL
@@ -678,6 +686,17 @@ export default function Builder() {
                       💡 <span className="font-semibold text-white">Agent Insight:</span> {agentExplanation}
                     </p>
                   )}
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-purple-500/20 text-xs">
+                    <span className="text-white/60">Ready to defend these technical claims?</span>
+                    <Link
+                      to="/interview"
+                      className="text-purple-300 hover:text-purple-200 font-semibold flex items-center gap-1.5 transition-colors"
+                    >
+                      <span>Launch AI Viva &amp; Interview Prep</span>
+                      <ArrowRight size={13} />
+                    </Link>
+                  </div>
                 </div>
               )}
 
