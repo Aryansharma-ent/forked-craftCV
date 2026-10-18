@@ -10,6 +10,7 @@ import Pricing from "./Pages/Pricing";
 import NotFound from "./Pages/NotFound";
 import PortfolioView from "./Pages/PortfolioView";
 import InterviewPrep from "./Pages/InterviewPrep";
+import ResumeAudit from "./Pages/ResumeAudit";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Route path="/templates" element={<Templates />} />
       <Route path="/portfolio/:id" element={<PortfolioView />} />
       <Route path="/interview" element={<InterviewPrep />} />
+      <Route path="/audit" element={<ResumeAudit />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/dashboard" element={<Dashboard />} />
