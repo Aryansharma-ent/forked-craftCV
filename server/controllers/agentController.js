@@ -55,7 +55,7 @@ You MUST respond strictly with valid JSON conforming to this format (no markdown
 }`;
 
         let rawText = null;
-        for (const model of ['gemini-2.5-flash', 'gemini-1.5-flash']) {
+        for (const model of ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']) {
           try {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
             const response = await axios.post(
@@ -225,7 +225,7 @@ You MUST respond strictly with valid JSON conforming to this schema (no markdown
           });
         }
 
-        for (const model of ['gemini-2.5-flash', 'gemini-1.5-flash']) {
+        for (const model of ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']) {
           try {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
             const response = await axios.post(
@@ -341,7 +341,7 @@ You MUST respond strictly with valid JSON conforming to this schema (no markdown
   "vivaTip": "string"
 }`;
 
-        for (const model of ['gemini-2.5-flash', 'gemini-1.5-flash']) {
+        for (const model of ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']) {
           try {
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
             const response = await axios.post(
