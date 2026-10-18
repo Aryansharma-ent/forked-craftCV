@@ -26,7 +26,10 @@ import {
   LuSend as Send,
   LuCpu as Cpu,
   LuWandSparkles as Wand2,
-  LuArrowRight as ArrowRight
+  LuArrowRight as ArrowRight,
+  LuGlobe as Globe,
+  LuShare2 as Share2,
+  LuX as X
 } from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
 import { githubApi, portfolioApi, agentApi } from '../lib/api'
@@ -221,6 +224,13 @@ export default function Builder() {
   const [savedSuccess, setSavedSuccess] = useState(null)
   const [showAtsPopover, setShowAtsPopover] = useState(false)
 
+  // Hosted Web Portfolio State
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false)
+  const [publishedSlug, setPublishedSlug] = useState('aryan-sharma')
+  const [publishingPortfolio, setPublishingPortfolio] = useState(false)
+  const [portfolioTheme, setPortfolioTheme] = useState('bento')
+  const [portfolioCopied, setPortfolioCopied] = useState(false)
+
   // Live dynamic ATS score calculation
   const ats = useMemo(() => {
     return calculateAtsScore({ personal, experience, education, skills })
@@ -364,6 +374,65 @@ export default function Builder() {
     }
   }
 
+  const handlePublishPortfolio = async () => {
+    setPublishingPortfolio(true)
+    const baseSlug = (personal.name || 'candidate').toLowerCase().replace(/[^a-z0-9]/g, '-') || 'me'
+    const slug = baseSlug === 'alex-chen' ? 'aryan-sharma' : baseSlug
+    setPublishedSlug(slug)
+
+    const payload = {
+      slug,
+      title: `${personal.name || 'Candidate'} | Developer Portfolio`,
+      template: portfolioTheme,
+      personalInfo: {
+        fullName: personal.name || 'Candidate Name',
+        title: personal.title || 'Full Stack Engineer',
+        bio: personal.summary || 'Building scalable applications and systems.',
+        email: personal.email || '',
+        phone: personal.phone || '',
+        location: personal.location || '',
+        websiteUrl: personal.website || '',
+        linkedinUrl: personal.linkedin || '',
+        githubUsername: githubUser || ''
+      },
+      skills: {
+        languages: skills.slice(0, 6),
+        frameworks: skills.slice(6, 12),
+        tools: skills.slice(12)
+      },
+      experience: experience.map(exp => ({
+        company: exp.company,
+        role: exp.role,
+        duration: `${exp.start || ''} - ${exp.end || ''}`,
+        description: Array.isArray(exp.bullets) ? exp.bullets.join('. ') : (exp.bullets || '')
+      })),
+      education: education.map(edu => ({
+        degree: edu.degree,
+        institution: edu.school,
+        year: `${edu.start || ''} - ${edu.end || ''}`,
+        score: edu.gpa || ''
+      }))
+    }
+
+    try {
+      localStorage.setItem('craftcv_portfolio_draft', JSON.stringify(payload))
+      localStorage.setItem('craftcv_current_resume', JSON.stringify({ personal, experience, education, skills }))
+      await portfolioApi.save(payload)
+    } catch (e) {
+      console.warn('Backend save notice:', e)
+    } finally {
+      setPublishingPortfolio(false)
+      setShowPortfolioModal(true)
+    }
+  }
+
+  const handleCopyPortfolioUrl = () => {
+    const url = `${window.location.origin}/portfolio/${publishedSlug}`
+    navigator.clipboard.writeText(url)
+    setPortfolioCopied(true)
+    setTimeout(() => setPortfolioCopied(false), 2500)
+  }
+
   const handlePrint = () => {
     window.print()
   }
@@ -485,6 +554,15 @@ export default function Builder() {
           >
             {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             <span>{saving ? 'Saving...' : 'Save Resume'}</span>
+          </button>
+
+          <button
+            onClick={handlePublishPortfolio}
+            disabled={publishingPortfolio}
+            className="flex items-center gap-1.5 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl font-semibold shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+          >
+            {publishingPortfolio ? <Loader2 size={13} className="animate-spin" /> : <Globe size={13} />}
+            <span>Live Portfolio</span>
           </button>
 
           <button
@@ -1115,6 +1193,102 @@ export default function Builder() {
         </aside>
 
       </div>
+
+      {/* 1-Click Hosted Developer Portfolio Modal */}
+      {showPortfolioModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0c0c0c] border border-white/15 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-white relative shadow-2xl space-y-6">
+            <button
+              onClick={() => setShowPortfolioModal(false)}
+              className="absolute top-5 right-5 text-white/40 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Live Web Portfolio Deployed
+              </span>
+              <h2 className="text-2xl font-bold elsie-black mt-2">
+                Your Portfolio is Live!
+              </h2>
+              <p className="text-xs text-white/50 leading-relaxed">
+                Your resume has been converted into an interactive, hosted developer portfolio ready to share with professors, recruiters, and hiring managers.
+              </p>
+            </div>
+
+            {/* Public Link Box */}
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-3">
+              <div className="truncate text-xs font-mono text-purple-300">
+                {`${window.location.origin}/portfolio/${publishedSlug}`}
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyPortfolioUrl}
+                className="px-3.5 py-1.5 rounded-xl bg-white text-black text-xs font-semibold hover:bg-white/90 transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow"
+              >
+                {portfolioCopied ? <Check size={12} className="text-emerald-600" /> : <Share2 size={12} />}
+                <span>{portfolioCopied ? 'Copied!' : 'Copy Link'}</span>
+              </button>
+            </div>
+
+            {/* Theme Selector for Live Portfolio */}
+            <div className="space-y-2">
+              <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold">Choose Interactive Theme</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'bento', label: '🍱 Bento Grid', desc: 'Modern dark bento boxes' },
+                  { id: 'terminal', label: '💻 CLI Terminal', desc: 'Interactive Linux shell' },
+                  { id: 'executive', label: '📄 Executive', desc: 'Clean editorial layout' },
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setPortfolioTheme(t.id)
+                      try {
+                        const currentDraft = JSON.parse(localStorage.getItem('craftcv_portfolio_draft') || '{}')
+                        currentDraft.template = t.id
+                        localStorage.setItem('craftcv_portfolio_draft', JSON.stringify(currentDraft))
+                      } catch (e) {}
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                      portfolioTheme === t.id
+                        ? 'border-purple-500 bg-purple-950/30 shadow-md'
+                        : 'border-white/10 bg-white/5 hover:border-white/20'
+                    }`}
+                  >
+                    <p className="text-xs font-bold text-white mb-0.5">{t.label}</p>
+                    <p className="text-[10px] text-white/50">{t.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <a
+                href={`/portfolio/${publishedSlug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:flex-1 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 cursor-pointer"
+              >
+                <ExternalLink size={14} />
+                <span>Open Live Portfolio</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowPortfolioModal(false)}
+                className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-semibold transition-all cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

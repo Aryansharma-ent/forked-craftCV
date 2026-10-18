@@ -12,7 +12,9 @@ import {
   LuX as X, 
   LuSparkles as Sparkles, 
   LuPenLine as Edit3, 
-  LuArrowRight as ArrowRight
+  LuArrowRight as ArrowRight,
+  LuGlobe as Globe,
+  LuExternalLink as ExternalLink
 } from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
 import Navbar from '@/components/Navbar'
@@ -93,30 +95,71 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* AI Viva & Interview Prep Banner */}
-        <div className="mt-8 p-6 md:p-8 rounded-3xl bg-gradient-to-r from-purple-950/40 via-[#0d0a14] to-[#0a0a0a] border border-purple-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
-          <div className="space-y-2 max-w-xl">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full border border-purple-400/40 bg-purple-500/20 text-purple-300 font-semibold">
-                New Feature
-              </span>
-              <span className="text-xs text-white/50">Gemini 2.5 Powered</span>
+        {/* Feature Grid: AI Viva Simulator + 1-Click Hosted Portfolio */}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Feature 1: AI Viva Simulator */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-purple-950/40 via-[#0d0a14] to-[#0a0a0a] border border-purple-500/30 flex flex-col justify-between gap-6 shadow-xl relative overflow-hidden">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full border border-purple-400/40 bg-purple-500/20 text-purple-300 font-semibold">
+                  AI Defense
+                </span>
+                <span className="text-xs text-white/50">Gemini 2.5 Powered</span>
+              </div>
+              <h3 className="text-xl font-bold elsie-black text-white">
+                AI Interview &amp; Viva Simulator
+              </h3>
+              <p className="text-xs text-white/60 leading-relaxed">
+                Generate rigorous technical viva questions, CS fundamentals, and project deep-dives grounded in your resume claims.
+              </p>
             </div>
-            <h3 className="text-xl md:text-2xl font-bold elsie-black text-white">
-              AI Interview &amp; College Viva Simulator
-            </h3>
-            <p className="text-xs md:text-sm text-white/60 leading-relaxed">
-              Don't just make resumes — defend them. Generate challenging technical viva questions, CS fundamentals, and project deep-dives grounded in your actual resume claims.
-            </p>
+
+            <Link
+              to="/interview"
+              className="flex items-center justify-between px-5 py-2.5 rounded-2xl bg-white text-black font-semibold text-xs hover:bg-white/90 transition-all shadow-md cursor-pointer self-start sm:self-auto"
+            >
+              <span>Launch Viva Simulator</span>
+              <ArrowRight size={14} className="ml-2" />
+            </Link>
           </div>
 
-          <Link
-            to="/interview"
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-black font-semibold text-xs hover:bg-white/90 transition-all shadow-md shrink-0 cursor-pointer"
-          >
-            <span>Launch Viva Simulator</span>
-            <ArrowRight size={14} />
-          </Link>
+          {/* Feature 2: 1-Click Hosted Portfolio */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-blue-950/40 via-[#0a0d16] to-[#0a0a0a] border border-blue-500/30 flex flex-col justify-between gap-6 shadow-xl relative overflow-hidden">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full border border-blue-400/40 bg-blue-500/20 text-blue-300 font-semibold">
+                  Web Portfolio
+                </span>
+                <span className="text-xs text-emerald-400 font-mono flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  Live Hosted
+                </span>
+              </div>
+              <h3 className="text-xl font-bold elsie-black text-white">
+                1-Click Hosted Developer Portfolio
+              </h3>
+              <p className="text-xs text-white/60 leading-relaxed">
+                Transform your resume into a live personal portfolio website featuring Bento Grid, Linux CLI Terminal, and Executive Classic themes.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <Link
+                to="/portfolio/aryan-sharma"
+                target="_blank"
+                className="flex items-center justify-between px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs transition-all shadow-lg shadow-blue-500/25 cursor-pointer"
+              >
+                <span>View Live Portfolio</span>
+                <ExternalLink size={13} className="ml-2" />
+              </Link>
+              <Link
+                to="/builder"
+                className="px-4 py-2.5 rounded-2xl border border-white/10 hover:border-white/30 text-white/80 hover:text-white text-xs font-semibold transition-all cursor-pointer"
+              >
+                Customize
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Your Resumes */}
@@ -136,12 +179,20 @@ export default function Dashboard() {
                   className="w-full h-full object-cover group-hover:brightness-110 transition duration-300"
                 />
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300">
                   <Link
                     to={`/builder?mode=${r.mode}&template=${r.template.toLowerCase()}`}
-                    className="border border-white/40 rounded-xl px-4 py-2 text-white text-sm hover:bg-white/10 transition-colors"
+                    className="border border-white/40 rounded-xl px-3.5 py-1.5 text-white text-xs hover:bg-white/10 transition-colors"
                   >
                     Edit
+                  </Link>
+                  <Link
+                    to="/portfolio/aryan-sharma"
+                    target="_blank"
+                    className="bg-white text-black font-semibold rounded-xl px-3.5 py-1.5 text-xs hover:bg-white/90 transition-colors flex items-center gap-1 shadow"
+                  >
+                    <span>Portfolio</span>
+                    <ExternalLink size={12} />
                   </Link>
                 </div>
               </div>

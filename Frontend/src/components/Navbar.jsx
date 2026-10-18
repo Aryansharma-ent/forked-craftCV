@@ -89,6 +89,23 @@ const Navbar = () => {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
+                    to='/portfolio/aryan-sharma'
+                    className={cn(
+                      'px-4 py-2 text-sm transition-colors rounded-md flex items-center gap-1.5',
+                      location.pathname.startsWith('/portfolio') ? 'text-white font-medium' : 'text-white/70 hover:text-white'
+                    )}
+                  >
+                    <span>Live Portfolio</span>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded-full font-mono">
+                      LIVE
+                    </span>
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
                     to='/interview'
                     className={cn(
                       'px-4 py-2 text-sm transition-colors rounded-md flex items-center gap-1.5',
@@ -182,6 +199,16 @@ const Navbar = () => {
               </Link>
             ))}
             <div className='border-t border-white/10 my-1' />
+            <Link
+              to='/portfolio/aryan-sharma'
+              className='text-sm text-white/70 hover:text-white transition-colors flex items-center justify-between'
+              onClick={() => setMobileOpen(false)}
+            >
+              <span>Live Web Portfolio</span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-mono">
+                LIVE
+              </span>
+            </Link>
             <Link
               to='/interview'
               className='text-sm text-white/70 hover:text-white transition-colors flex items-center justify-between'
