@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { motion } from 'framer-motion'
 import { 
@@ -24,6 +24,7 @@ import {
 } from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
 import { githubApi, portfolioApi } from '../lib/api'
+import calculateAtsScore from '../lib/atsScorer'
 import resume3 from '../assets/resume3.png'
 import resume2 from '../assets/resume2.png'
 import resume4 from '../assets/resume4.png'
@@ -110,6 +111,12 @@ export default function Builder() {
   // Save / Persistence State
   const [saving, setSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(null)
+  const [showAtsPopover, setShowAtsPopover] = useState(false)
+
+  // Live dynamic ATS score calculation
+  const ats = useMemo(() => {
+    return calculateAtsScore({ personal, experience, education, skills })
+  }, [personal, experience, education, skills])
 
   // Sync mode changes with URL
   const switchMode = (newMode) => {
@@ -281,9 +288,66 @@ export default function Builder() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium text-green-400 bg-green-500/10 border-green-500/20">
-            <CheckCircle size={12} />
-            ATS Score: 94/100
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowAtsPopover(!showAtsPopover)}
+              className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${ats.color} hover:brightness-125`}
+            >
+              <CheckCircle size={12} />
+              <span>ATS Score: {ats.score}/100</span>
+            </button>
+
+            {/* Real-time ATS Breakdown & Tips Popover */}
+            {showAtsPopover && (
+              <div className="absolute right-0 top-12 z-50 w-80 bg-[#0e0e0e] border border-white/15 rounded-2xl p-4 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-3">
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-white/40 tracking-wider">ATS Optimization</span>
+                    <p className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>Score: {ats.score}/100</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border ${ats.color}`}>{ats.tier}</span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAtsPopover(false)}
+                    className="text-white/40 hover:text-white text-xs cursor-pointer p-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-2 mb-3">
+                  {ats.breakdown.map((item, i) => (
+                    <div key={i} className="text-xs">
+                      <div className="flex justify-between text-[11px] text-white/70 mb-0.5">
+                        <span>{item.label}</span>
+                        <span className="font-mono text-white/90">{item.score}/{item.max}</span>
+                      </div>
+                      <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            item.score === item.max ? 'bg-green-400' : item.score > 0 ? 'bg-amber-400' : 'bg-rose-400'
+                          }`}
+                          style={{ width: `${(item.score / item.max) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {ats.suggestions.length > 0 && (
+                  <div className="pt-2 border-t border-white/10">
+                    <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1.5">Improvement Tips</p>
+                    <ul className="space-y-1 text-[11px] text-white/70 list-disc list-inside">
+                      {ats.suggestions.map((s, idx) => (
+                        <li key={idx} className="leading-tight text-amber-300/80">{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <button
