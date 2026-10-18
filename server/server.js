@@ -6,6 +6,7 @@ import { connectDB } from './config/db.js';
 import portfolioRoutes from './routes/portfolioRoutes.js';
 import githubRoutes from './routes/githubRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import agentRoutes from './routes/agentRoutes.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use(morgan('dev'));
 app.use('/api/auth', authRoutes);
 app.use('/api/portfolios', portfolioRoutes);
 app.use('/api/github', githubRoutes);
+app.use('/api/agent', agentRoutes);
 
 // Root & Healthcheck
 app.get('/api/health', (req, res) => {

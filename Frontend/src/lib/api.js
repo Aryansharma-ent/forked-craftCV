@@ -62,4 +62,12 @@ export const githubApi = {
   ingest: (username) => request(`/github/${encodeURIComponent(username)}`),
 };
 
-export default { authApi, portfolioApi, githubApi };
+export const agentApi = {
+  command: (instruction, currentResume, apiKey) =>
+    request('/agent/command', {
+      method: 'POST',
+      body: JSON.stringify({ instruction, currentResume, apiKey }),
+    }),
+};
+
+export default { authApi, portfolioApi, githubApi, agentApi };

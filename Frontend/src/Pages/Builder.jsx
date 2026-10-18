@@ -20,15 +20,44 @@ import {
   LuExternalLink as ExternalLink, 
   LuLayers as Layers, 
   LuTerminal as TerminalIcon, 
-  LuEye as Eye 
+  LuEye as Eye,
+  LuBot as Bot,
+  LuRotateCcw as RotateCcw,
+  LuKey as Key,
+  LuSend as Send,
+  LuCpu as Cpu,
+  LuWandSparkles as Wand2
 } from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
-import { githubApi, portfolioApi } from '../lib/api'
+import { githubApi, portfolioApi, agentApi } from '../lib/api'
 import calculateAtsScore from '../lib/atsScorer'
 import resume3 from '../assets/resume3.png'
 import resume2 from '../assets/resume2.png'
 import resume4 from '../assets/resume4.png'
 import resume from '../assets/resume.png'
+
+const AGENT_PROMPT_PRESETS = [
+  {
+    title: '🎯 Senior Backend Engineer',
+    desc: 'Target Go, Docker, Redis, Kafka, high-throughput microservices',
+    prompt: 'Tailor my resume for a Senior Backend Engineer role. Emphasize Go, Docker, Redis, Kafka, distributed systems, high throughput, and database latency optimization.',
+  },
+  {
+    title: '🚀 Full Stack Systems Engineer',
+    desc: 'Target React, Node.js, Next.js, PostgreSQL, microservices',
+    prompt: 'Tailor my resume for a Full Stack Systems Engineer role specializing in React, Next.js, Node.js, TypeScript, PostgreSQL, and scalable microservices.',
+  },
+  {
+    title: '☁️ DevOps & Cloud Architect',
+    desc: 'Target AWS, Kubernetes, CI/CD pipelines, Terraform, 99.99% uptime',
+    prompt: 'Tailor my resume for a DevOps & Cloud Engineer role. Focus on Kubernetes, AWS, Terraform, Docker, CI/CD automated pipelines, and achieving 99.99% uptime.',
+  },
+  {
+    title: '⚡ ATS Metric Quantifier',
+    desc: 'Transform bullets into quantified impact statements with % and metrics',
+    prompt: 'Enhance all experience bullet points with quantifiable performance metrics, percentages, cost reductions, and strong engineering action verbs to maximize ATS score.',
+  },
+]
 
 const templatePreviews = [
   { id: 'apex',    name: 'Apex',    img: resume3 },
@@ -101,6 +130,93 @@ export default function Builder() {
   const [skills, setSkills] = useState([
     'TypeScript', 'React', 'Node.js', 'PostgreSQL', 'Redis', 'AWS', 'Go', 'GraphQL', 'Docker', 'Kubernetes'
   ])
+
+  // Autonomous Agentic Gemini Copilot State
+  const [agentInstruction, setAgentInstruction] = useState('')
+  const [agentApiKey, setAgentApiKey] = useState(() => localStorage.getItem('craftcv_gemini_key') || '')
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false)
+  const [agentLoading, setAgentLoading] = useState(false)
+  const [agentStepText, setAgentStepText] = useState('')
+  const [agentSuccessMessage, setAgentSuccessMessage] = useState(null)
+  const [agentExplanation, setAgentExplanation] = useState(null)
+  const [agentSource, setAgentSource] = useState(null)
+  const [agentPreviousState, setAgentPreviousState] = useState(null)
+
+  const handleApiKeyChange = (val) => {
+    setAgentApiKey(val)
+    localStorage.setItem('craftcv_gemini_key', val)
+  }
+
+  const handleExecuteAgent = async (overridePrompt) => {
+    const targetInstruction = (overridePrompt !== undefined ? overridePrompt : agentInstruction).trim()
+    if (!targetInstruction) return
+
+    setAgentLoading(true)
+    setAgentStepText('Analyzing resume background against requirements...')
+    setAgentSuccessMessage(null)
+
+    // Save previous snapshot for undo
+    setAgentPreviousState({
+      personal: { ...personal },
+      experience: JSON.parse(JSON.stringify(experience)),
+      education: JSON.parse(JSON.stringify(education)),
+      skills: [...skills],
+    })
+
+    const t1 = setTimeout(() => {
+      setAgentStepText('Evaluating ATS keywords & role alignment...')
+    }, 900)
+    const t2 = setTimeout(() => {
+      setAgentStepText('Synthesizing technical metrics & rewriting bullets...')
+    }, 1800)
+
+    try {
+      const res = await agentApi.command(
+        targetInstruction,
+        { personal, experience, education, skills },
+        agentApiKey.trim() || undefined
+      )
+
+      if (res.success && res.data) {
+        const { updatedTitle, updatedSummary, updatedSkills, updatedExperience, explanation } = res.data
+
+        if (updatedTitle) {
+          setPersonal(prev => ({ ...prev, title: updatedTitle }))
+        }
+        if (updatedSummary) {
+          setPersonal(prev => ({ ...prev, summary: updatedSummary }))
+        }
+        if (updatedSkills && Array.isArray(updatedSkills) && updatedSkills.length > 0) {
+          setSkills(updatedSkills)
+        }
+        if (updatedExperience && Array.isArray(updatedExperience) && updatedExperience.length > 0) {
+          setExperience(updatedExperience)
+        }
+
+        setAgentExplanation(explanation || 'Successfully mutated and tailored resume fields.')
+        setAgentSource(res.source || 'gemini-live')
+        setAgentSuccessMessage('Resume tailored successfully! All fields and metrics updated in real-time.')
+      }
+    } catch (err) {
+      console.error('Agent Execution Error:', err)
+      setAgentSuccessMessage(`Agent error: ${err.message || 'Execution failed'}`)
+    } finally {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      setAgentLoading(false)
+    }
+  }
+
+  const handleUndoAgent = () => {
+    if (!agentPreviousState) return
+    setPersonal(agentPreviousState.personal)
+    setExperience(agentPreviousState.experience)
+    setEducation(agentPreviousState.education)
+    setSkills(agentPreviousState.skills)
+    setAgentPreviousState(null)
+    setAgentSuccessMessage('Reverted back to previous resume version.')
+    setAgentExplanation(null)
+  }
 
   // GitHub Ingestion State
   const [githubUser, setGithubUser] = useState('')
@@ -285,6 +401,19 @@ export default function Builder() {
               <span>GitHub Fetch</span>
             </button>
           </div>
+
+          {/* Agent Copilot Header Quick Button */}
+          <button
+            onClick={() => setActiveSection('agent')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              activeSection === 'agent'
+                ? 'bg-purple-600 text-white border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+                : 'border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20'
+            }`}
+          >
+            <Sparkles size={12} className="text-purple-300 animate-pulse" />
+            <span>Agent Copilot</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -397,6 +526,24 @@ export default function Builder() {
             </div>
           )}
 
+          {/* Agent Copilot Navigation Button */}
+          <div className="mb-4 px-3">
+            <button
+              onClick={() => setActiveSection('agent')}
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium w-full text-left transition-all cursor-pointer ${
+                activeSection === 'agent'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold shadow-lg'
+                  : 'border border-purple-500/30 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20'
+              }`}
+            >
+              <Sparkles size={14} className="text-purple-300 shrink-0 animate-pulse" />
+              <div className="min-w-0">
+                <span className="block font-semibold leading-tight">Agent Copilot</span>
+                <span className="block text-[10px] text-purple-300/70 truncate">Autonomous Tailor</span>
+              </div>
+            </button>
+          </div>
+
           <p className="text-[10px] uppercase tracking-widest text-white/30 px-5 mb-2">Sections</p>
           {SECTIONS.map(({ id, label, icon: Icon }) => (
             <button
@@ -486,6 +633,193 @@ export default function Builder() {
                     </p>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* AGENTIC COPILOT SECTION */}
+          {activeSection === 'agent' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              
+              {/* Top Banner Card */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#120b1f] via-[#0d0914] to-[#070707] border border-purple-500/30 space-y-4 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shadow-inner">
+                      <Sparkles size={20} className="animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold elsie-black text-white">Autonomous Agentic Copilot</h2>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-purple-400/40 bg-purple-500/20 text-purple-200 font-mono">
+                          Gemini 1.5
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/60">
+                        Paste a target Job Description or give natural language commands. The agent directly rewrites summaries, injects required tech stacks, and calculates quantifiable metrics for your bullets.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs transition-colors cursor-pointer self-start sm:self-auto shrink-0"
+                  >
+                    <Key size={12} className={agentApiKey ? 'text-amber-400' : 'text-white/40'} />
+                    <span>{agentApiKey ? 'API Key Configured' : 'Configure Gemini Key'}</span>
+                  </button>
+                </div>
+
+                {/* Gemini API Key Configuration Drawer */}
+                {showApiKeyInput && (
+                  <div className="p-4 rounded-xl bg-black/60 border border-purple-500/20 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <label className="text-white/80 font-medium flex items-center gap-1.5">
+                        <Key size={13} className="text-purple-400" />
+                        Gemini API Key (Optional)
+                      </label>
+                      <span className="text-[10px] text-white/40">Saved in browser localStorage</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        value={agentApiKey}
+                        onChange={(e) => handleApiKeyChange(e.target.value)}
+                        placeholder="AIzaSy... (leave blank to use system .env key or fallback engine)"
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-white/20 focus:outline-none focus:border-purple-400 font-mono text-xs"
+                      />
+                      {agentApiKey && (
+                        <button
+                          type="button"
+                          onClick={() => handleApiKeyChange('')}
+                          className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-rose-400 text-xs transition-colors cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-white/50 leading-relaxed">
+                      If left blank, CraftCV automatically falls back to your server's backend <code className="text-purple-300">GEMINI_API_KEY</code> or its built-in rule-based agentic synthesizer, ensuring 100% demo uptime.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Success / Explanation Banner with Undo */}
+              {agentSuccessMessage && (
+                <div className="p-5 rounded-2xl bg-purple-950/40 border border-purple-500/40 space-y-3 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span className="text-xs font-semibold text-purple-200">{agentSuccessMessage}</span>
+                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/10 text-white/70">
+                        {agentSource || 'agent'}
+                      </span>
+                    </div>
+                    {agentPreviousState && (
+                      <button
+                        onClick={handleUndoAgent}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs text-white font-medium cursor-pointer transition-colors"
+                      >
+                        <RotateCcw size={12} />
+                        <span>Undo Changes</span>
+                      </button>
+                    )}
+                  </div>
+                  {agentExplanation && (
+                    <p className="text-xs text-white/80 bg-black/40 p-3 rounded-xl border border-white/5 leading-relaxed font-sans">
+                      💡 <span className="font-semibold text-white">Agent Insight:</span> {agentExplanation}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Quick Action Presets */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+                    <Wand2 size={13} className="text-purple-400" />
+                    1-Click Job Tailoring Presets
+                  </p>
+                  <span className="text-[11px] text-white/40">Click any preset to load & execute</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {AGENT_PROMPT_PRESETS.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={agentLoading}
+                      onClick={() => {
+                        setAgentInstruction(preset.prompt)
+                        handleExecuteAgent(preset.prompt)
+                      }}
+                      className="text-left p-3.5 rounded-2xl border border-white/10 bg-[#0c0c0c] hover:border-purple-500/50 hover:bg-[#130f1c] transition-all cursor-pointer group disabled:opacity-50"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+                          {preset.title}
+                        </span>
+                        <span className="text-[10px] text-white/30 group-hover:text-white/70">Run ⚡</span>
+                      </div>
+                      <p className="text-[11px] text-white/50 group-hover:text-white/70 leading-relaxed">
+                        {preset.desc}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Job Description / Instruction Prompt */}
+              <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/10 space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-white uppercase tracking-wider block mb-1">
+                    Target Job Description / Agent Command
+                  </label>
+                  <p className="text-xs text-white/50">
+                    Paste the job requirements from LinkedIn, Indeed, or specify customizations like "Add Redis caching and 40% performance metric to my Stripe experience."
+                  </p>
+                </div>
+
+                <textarea
+                  rows={6}
+                  value={agentInstruction}
+                  onChange={(e) => setAgentInstruction(e.target.value)}
+                  placeholder="Paste Job Description here (e.g. 'We are hiring a Senior Distributed Systems Engineer. Must have 4+ years with Go or Node, Docker, Kafka, PostgreSQL, and high availability systems.')..."
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-xs placeholder-white/20 focus:outline-none focus:border-purple-400 leading-relaxed"
+                />
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-white/10">
+                  <div className="text-xs text-white/50 flex items-center gap-2">
+                    {agentLoading ? (
+                      <span className="flex items-center gap-2 text-purple-300">
+                        <Loader2 size={13} className="animate-spin" />
+                        <span>{agentStepText}</span>
+                      </span>
+                    ) : (
+                      <span>✨ Ready to tailor resume fields & recalculate live ATS score</span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={agentLoading || !agentInstruction.trim()}
+                    onClick={() => handleExecuteAgent()}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs transition-all shadow-lg shadow-purple-600/30 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {agentLoading ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>Synthesizing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} />
+                        <span>Execute Agent Tailoring</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
