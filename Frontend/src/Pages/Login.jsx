@@ -118,7 +118,7 @@ export default function Login() {
             onClick={handleDemoLogin}
             className="w-full bg-white/5 border border-white/10 text-white/70 py-2.5 rounded-2xl text-xs font-medium hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
           >
-            Demo Sign In (Alex Chen)
+            Continue as Guest (Preview)
           </button>
         </form>
 

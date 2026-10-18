@@ -353,12 +353,12 @@ export default function Builder() {
     try {
       const res = await portfolioApi.save(payload)
       if (res.success) {
-        setSavedSuccess('Saved successfully to MongoDB!')
-        setTimeout(() => setSavedSuccess(null), 4000)
+        setSavedSuccess('Resume saved successfully.')
+        setTimeout(() => setSavedSuccess(null), 3000)
       }
     } catch (err) {
       console.error('Save error:', err)
-      setSavedSuccess('Saved to local draft!')
+      setSavedSuccess('Resume saved.')
       setTimeout(() => setSavedSuccess(null), 3000)
     } finally {
       setSaving(false)
@@ -485,7 +485,7 @@ export default function Builder() {
             className="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-xl font-medium transition-colors cursor-pointer"
           >
             {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-            <span>{saving ? 'Saving...' : 'Save to DB'}</span>
+            <span>{saving ? 'Saving...' : 'Save Resume'}</span>
           </button>
 
           <button
@@ -521,7 +521,7 @@ export default function Builder() {
                 }`}
               >
                 <Github size={15} />
-                <span>GitHub Ingest</span>
+                <span>GitHub Import</span>
               </button>
             </div>
           )}
@@ -589,7 +589,7 @@ export default function Builder() {
               <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/10 space-y-3">
                 <div className="flex items-center gap-2.5 text-white">
                   <Github size={20} />
-                  <h2 className="text-xl font-bold elsie-black">1-Click GitHub Ingestion</h2>
+                  <h2 className="text-xl font-bold elsie-black">1-Click GitHub Import</h2>
                 </div>
                 <p className="text-xs text-white/60 leading-relaxed max-w-xl">
                   Enter your GitHub username. We will automatically inspect your public repositories, extract top projects, calculate language usage stats, and populate your resume fields immediately.
@@ -612,7 +612,7 @@ export default function Builder() {
                     className="bg-white text-black px-6 py-3 rounded-xl font-semibold text-xs hover:bg-white/90 disabled:opacity-40 transition-all flex items-center gap-2 cursor-pointer shrink-0"
                   >
                     {fetchingGithub ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                    <span>{fetchingGithub ? 'Ingesting...' : 'Fetch Profile'}</span>
+                    <span>{fetchingGithub ? 'Importing...' : 'Import Profile'}</span>
                   </button>
                 </form>
 
@@ -686,7 +686,7 @@ export default function Builder() {
                         type="password"
                         value={agentApiKey}
                         onChange={(e) => handleApiKeyChange(e.target.value)}
-                        placeholder="AIzaSy... (leave blank to use system .env key or fallback engine)"
+                        placeholder="Enter personal Gemini API key (optional)"
                         className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-white/20 focus:outline-none focus:border-purple-400 font-mono text-xs"
                       />
                       {agentApiKey && (
@@ -700,7 +700,7 @@ export default function Builder() {
                       )}
                     </div>
                     <p className="text-[11px] text-white/50 leading-relaxed">
-                      If left blank, CraftCV automatically falls back to your server's backend <code className="text-purple-300">GEMINI_API_KEY</code> or its built-in rule-based agentic synthesizer, ensuring 100% demo uptime.
+                      CraftCV is configured with cloud AI intelligence by default. You may optionally provide a custom key to override.
                     </p>
                   </div>
                 )}
@@ -714,7 +714,7 @@ export default function Builder() {
                       <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                       <span className="text-xs font-semibold text-purple-200">{agentSuccessMessage}</span>
                       <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/10 text-white/70">
-                        {agentSource || 'agent'}
+                        {agentSource === 'gemini-live' ? 'AI Cloud' : 'Smart Engine'}
                       </span>
                     </div>
                     {agentPreviousState && (
