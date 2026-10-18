@@ -54,20 +54,29 @@ You MUST respond strictly with valid JSON conforming to this format (no markdown
   ]
 }`;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveApiKey}`;
-        const response = await axios.post(
-          geminiUrl,
-          {
-            contents: [{ parts: [{ text: systemPrompt }] }],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.2
-            }
-          },
-          { timeout: 20000 }
-        );
+        let rawText = null;
+        for (const model of ['gemini-2.5-flash', 'gemini-1.5-flash']) {
+          try {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
+            const response = await axios.post(
+              geminiUrl,
+              {
+                contents: [{ parts: [{ text: systemPrompt }] }],
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                  temperature: 0.2
+                }
+              },
+              { timeout: 20000 }
+            );
 
-        const rawText = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+            rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) break;
+          } catch (modelErr) {
+            console.warn(`[Gemini Model ${model} Warning]:`, modelErr.response?.data?.error?.message || modelErr.message);
+          }
+        }
+
         if (rawText) {
           const parsed = JSON.parse(rawText);
           return res.status(200).json({
