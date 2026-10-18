@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router'
 import BlurText from "./BlurText";
 import { motion } from 'framer-motion'
 import resume3 from '../assets/resume3.png'
@@ -45,9 +46,13 @@ const HeroSection = () => {
        className="text-[18px]  font-serif max-w-xl text-white/70 "
    />
  <div className='flex gap-7 mt-3'>
-   <button className='bg-black text-white border rounded-2xl p-4'>Create My Resume </button> 
-   <button className='border p-3.5 w-50 rounded-2xl bg-white hover:bg-white/90'>View Template</button>  
-   </div>
+   <Link to="/builder" className='bg-black text-white border border-neutral-700 hover:border-white rounded-2xl p-4 transition-all text-sm font-semibold inline-flex items-center justify-center cursor-pointer'>
+     Create My Portfolio
+   </Link> 
+   <Link to="/templates" className='border p-3.5 w-50 rounded-2xl bg-white hover:bg-white/90 text-black text-sm font-semibold inline-flex items-center justify-center transition-all cursor-pointer'>
+     View Templates
+   </Link>  
+ </div>
   <div className='flex text-lg mt-3 text-blue-400 elsie-regular gap-3'>
    <p>Free to start </p>
    <p>Professional resumes </p>
