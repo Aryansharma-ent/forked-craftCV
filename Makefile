@@ -1,30 +1,57 @@
-# Every team fills in the commands for their own stack.
-# The CI pipeline calls these targets, so the names must not change.
-#
-# Examples:
-#   Node    install: npm ci          test: npm test        build: npm run build
-#   Python  install: pip install -r requirements.txt
-#                                    test: pytest          build: echo "no build step"
-#   Java    install: ./mvnw -B dependency:go-offline
-#                                    test: ./mvnw test     build: ./mvnw package
+# ─────────────────────────────────────────────────────────────────────────────
+# CraftCV Makefile
+# The CI pipeline (Jenkinsfile) calls: install, lint, test, build
+# Docker targets: docker-build, docker-up, docker-push
+# Kubernetes targets: k8s-apply, k8s-status, k8s-delete
+# ─────────────────────────────────────────────────────────────────────────────
 
-.PHONY: install test build run docker-build docker-up
+IMAGE_NAME ?= craftcv-frontend
+IMAGE_TAG  ?= latest
+REGISTRY   ?= docker.io/$(DOCKER_USER)
+
+.PHONY: install lint test build run \
+        docker-build docker-up docker-push \
+        k8s-apply k8s-status k8s-delete
+
+# ── Local development ─────────────────────────────────────────────────────────
 
 install:
-	@echo "TODO: install dependencies" && exit 1
+	cd Frontend && npm ci --include=dev
 
+lint:
+	cd Frontend && npm run lint
+
+# No unit test suite yet — placeholder passes CI until tests are added.
 test:
-	@echo "TODO: run the test suite" && exit 1
+	@echo "No automated tests configured yet. Add Jest/Vitest here."
 
 build:
-	@echo "TODO: build the project" && exit 1
+	cd Frontend && npm run build
 
 run:
-	@echo "TODO: start the app locally" && exit 1
+	cd Frontend && npm run dev
 
-# Needed from M4 onwards
+# ── Docker ───────────────────────────────────────────────────────────────────
+
 docker-build:
-	@echo "TODO: docker build for frontend and backend" && exit 1
+	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
 
 docker-up:
 	docker compose up --build
+
+docker-push:
+	@test -n "$(DOCKER_USER)" || (echo "Set DOCKER_USER=<your-hub-username>"; exit 1)
+	docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
+	docker push $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
+
+# ── Kubernetes ───────────────────────────────────────────────────────────────
+
+k8s-apply:
+	kubectl apply -f k8s/deployment.yml
+	kubectl apply -f k8s/service.yml
+
+k8s-status:
+	kubectl get deployments,pods,services -l app=craftcv
+
+k8s-delete:
+	kubectl delete -f k8s/

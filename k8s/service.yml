@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: craftcv-frontend
+  namespace: default
+  labels:
+    app: craftcv
+    component: frontend
+spec:
+  # NodePort exposes the service on every node's IP at a fixed port (30080).
+  # This works on Docker Desktop, Minikube, and bare-metal clusters without
+  # a cloud load-balancer. Switch to type: LoadBalancer when deploying to
+  # GKE / EKS / AKS for a cloud-provisioned IP.
+  type: NodePort
+  selector:
+    app: craftcv
+    component: frontend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80          # ClusterIP port (internal cluster traffic)
+      targetPort: 80    # container port
+      nodePort: 30080   # externally reachable on every node at :30080
