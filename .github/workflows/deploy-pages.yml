@@ -40,7 +40,7 @@ jobs:
       - name: Build site
         env:
           GITHUB_PAGES: 'true'
-          VITE_BASE_PATH: '/CraftCV/'
+          VITE_BASE_PATH: '/${{ github.event.repository.name }}/'
         run: |
           cd Frontend
           npm run build
