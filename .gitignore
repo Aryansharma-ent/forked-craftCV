@@ -15,6 +15,7 @@ build/
 # Environment and secrets
 .env
 **/.env
+ server/.env:4
 .env.*
 *.pem
 *.key
