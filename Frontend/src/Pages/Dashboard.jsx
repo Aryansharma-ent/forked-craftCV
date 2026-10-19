@@ -2,15 +2,9 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router'
 import { 
-  LuFileText as FileText, 
-  LuDownload as Download, 
-  LuStar as Star, 
   LuPlus as Plus, 
-  LuTrendingUp as TrendingUp, 
-  LuClock as Clock, 
   LuCircleCheck as CheckCircle, 
   LuX as X, 
-  LuSparkles as Sparkles, 
   LuPenLine as Edit3, 
   LuArrowRight as ArrowRight
 } from 'react-icons/lu'
@@ -19,12 +13,6 @@ import Navbar from '@/components/Navbar'
 import resume2 from '../assets/resume2.png'
 import resume3 from '../assets/resume3.png'
 import resume4 from '../assets/resume4.png'
-
-const stats = [
-  { icon: FileText, value: '3',   label: 'Resumes Created' },
-  { icon: Download, value: '12',  label: 'Total Downloads' },
-  { icon: Star,     value: '87%', label: 'Avg. ATS Score'  },
-]
 
 const resumes = [
   { name: 'Software Engineer Resume',  template: 'Apex',  lastEdited: '2 hours ago', atsScore: 92, img: resume3, mode: 'github' },
@@ -76,45 +64,22 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {stats.map(({ icon: Icon, value, label }) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: 'easeOut' }}
-              className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 flex flex-col gap-3"
-            >
-              <Icon size={22} className="text-white/40" />
-              <p className="text-4xl elsie-black text-white leading-none">{value}</p>
-              <p className="text-white/50 text-sm">{label}</p>
-            </motion.div>
-          ))}
-        </div>
 
-        {/* AI Viva & Interview Prep Banner */}
-        <div className="mt-8 p-6 md:p-8 rounded-3xl bg-gradient-to-r from-purple-950/40 via-[#0d0a14] to-[#0a0a0a] border border-purple-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
-          <div className="space-y-2 max-w-xl">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full border border-purple-400/40 bg-purple-500/20 text-purple-300 font-semibold">
-                New Feature
-              </span>
-              <span className="text-xs text-white/50">Gemini 2.5 Powered</span>
-            </div>
-            <h3 className="text-xl md:text-2xl font-bold elsie-black text-white">
-              AI Interview &amp; College Viva Simulator
+        {/* Interview Prep Callout */}
+        <div className="mt-8 p-6 rounded-2xl bg-[#0a0a0a] border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold elsie-black text-white">
+              Interview & Viva Preparation
             </h3>
-            <p className="text-xs md:text-sm text-white/60 leading-relaxed">
-              Don't just make resumes — defend them. Generate challenging technical viva questions, CS fundamentals, and project deep-dives grounded in your actual resume claims.
+            <p className="text-sm text-white/50">
+              Generate technical interview questions based on your resume. Practice defending your projects before the actual interview.
             </p>
           </div>
-
           <Link
             to="/interview"
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-black font-semibold text-xs hover:bg-white/90 transition-all shadow-md shrink-0 cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-black font-semibold text-xs hover:bg-white/90 transition-all shrink-0 cursor-pointer"
           >
-            <span>Launch Viva Simulator</span>
+            <span>Open Interview Prep</span>
             <ArrowRight size={14} />
           </Link>
         </div>
@@ -217,7 +182,7 @@ export default function Dashboard() {
                 {/* Option 2: 1-Click GitHub */}
                 <div
                   onClick={() => handleSelectMode('github')}
-                  className="bg-gradient-to-tr from-white/5 to-white/10 hover:from-white/10 hover:to-white/15 border border-white/20 hover:border-white/40 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 cursor-pointer group relative overflow-hidden"
+                  className="bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/40 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 cursor-pointer group relative overflow-hidden"
                 >
                   <div className="absolute top-3 right-3 text-[10px] font-bold bg-white text-black px-2 py-0.5 rounded-full">
                     Instant

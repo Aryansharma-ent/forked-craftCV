@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LuTerminal as Terminal, LuSend as Send, LuCornerDownLeft as CornerDownLeft, LuSparkles as Sparkles } from 'react-icons/lu';
+import { LuTerminal as Terminal, LuCornerDownLeft as CornerDownLeft } from 'react-icons/lu';
 
 export const TerminalTemplate = ({ portfolio }) => {
   const { personalInfo = {}, skills = {}, projects = [], experience = [], education = [] } = portfolio || {};

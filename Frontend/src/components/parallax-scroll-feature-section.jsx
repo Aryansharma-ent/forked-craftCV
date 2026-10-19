@@ -1,4 +1,5 @@
 import { useRef } from "react"
+import { Link } from 'react-router'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { LuArrowDown as ArrowDown } from "react-icons/lu"
 
@@ -84,9 +85,9 @@ export const Component = () => {
             </div>
 
             <div className='min-h-screen w-full bg-black flex flex-col items-center justify-center gap-6 text-white'>
-                <h1 className='text-8xl elsie-black text-center max-w-3xl'>Your Next Role Starts Here.</h1>
-                <p className='text-white/50 text-lg max-w-xl text-center'>Join thousands of professionals who built their resume with CraftCV and moved forward in their careers.</p>
-                <button className='mt-4 border border-white/30 text-white px-8 py-4 rounded-2xl hover:bg-white hover:text-black transition-all duration-300'>Build My Resume — It's Free</button>
+                <h1 className='text-8xl elsie-black text-center max-w-3xl'>Start with the example resume.</h1>
+                <p className='text-white/50 text-lg max-w-xl text-center'>The builder opens on a worked example. Replace it section by section, and watch the ATS score update as you go.</p>
+                <Link to='/builder' className='mt-4 border border-white/30 text-white px-8 py-4 rounded-2xl hover:bg-white hover:text-black transition-all duration-300'>Open the builder</Link>
             </div>
         </div>
     )

@@ -13,19 +13,13 @@ import {
   LuCircleCheck as CheckCircle, 
   LuChevronLeft as ChevronLeft, 
   LuMinus as Minus, 
-  LuSparkles as Sparkles, 
+  LuX as X, 
   LuLoaderCircle as Loader2, 
   LuSave as Save, 
   LuCheck as Check, 
-  LuExternalLink as ExternalLink, 
-  LuLayers as Layers, 
-  LuTerminal as TerminalIcon, 
   LuEye as Eye,
-  LuBot as Bot,
   LuRotateCcw as RotateCcw,
-  LuSend as Send,
-  LuCpu as Cpu,
-  LuWandSparkles as Wand2,
+  LuPenLine as PenLine,
   LuArrowRight as ArrowRight
 } from 'react-icons/lu'
 import { FaGithub as Github } from 'react-icons/fa6'
@@ -38,22 +32,22 @@ import resume from '../assets/resume.png'
 
 const AGENT_PROMPT_PRESETS = [
   {
-    title: '🎯 Senior Backend Engineer',
+    title: 'Senior Backend Engineer',
     desc: 'Target Go, Docker, Redis, Kafka, high-throughput microservices',
     prompt: 'Tailor my resume for a Senior Backend Engineer role. Emphasize Go, Docker, Redis, Kafka, distributed systems, high throughput, and database latency optimization.',
   },
   {
-    title: '🚀 Full Stack Systems Engineer',
+    title: 'Full Stack Systems Engineer',
     desc: 'Target React, Node.js, Next.js, PostgreSQL, microservices',
     prompt: 'Tailor my resume for a Full Stack Systems Engineer role specializing in React, Next.js, Node.js, TypeScript, PostgreSQL, and scalable microservices.',
   },
   {
-    title: '☁️ DevOps & Cloud Architect',
+    title: 'DevOps & Cloud Engineer',
     desc: 'Target AWS, Kubernetes, CI/CD pipelines, Terraform, 99.99% uptime',
     prompt: 'Tailor my resume for a DevOps & Cloud Engineer role. Focus on Kubernetes, AWS, Terraform, Docker, CI/CD automated pipelines, and achieving 99.99% uptime.',
   },
   {
-    title: '⚡ ATS Metric Quantifier',
+    title: 'Quantify impact metrics',
     desc: 'Transform bullets into quantified impact statements with % and metrics',
     prompt: 'Enhance all experience bullet points with quantifiable performance metrics, percentages, cost reductions, and strong engineering action verbs to maximize ATS score.',
   },
@@ -131,13 +125,12 @@ export default function Builder() {
     'TypeScript', 'React', 'Node.js', 'PostgreSQL', 'Redis', 'AWS', 'Go', 'GraphQL', 'Docker', 'Kubernetes'
   ])
 
-  // Autonomous Agentic Gemini Copilot State
+  // Job-description tailoring state
   const [agentInstruction, setAgentInstruction] = useState('')
   const [agentLoading, setAgentLoading] = useState(false)
   const [agentStepText, setAgentStepText] = useState('')
   const [agentSuccessMessage, setAgentSuccessMessage] = useState(null)
   const [agentExplanation, setAgentExplanation] = useState(null)
-  const [agentSource, setAgentSource] = useState(null)
   const [agentPreviousState, setAgentPreviousState] = useState(null)
 
   const handleExecuteAgent = async (overridePrompt) => {
@@ -145,7 +138,7 @@ export default function Builder() {
     if (!targetInstruction) return
 
     setAgentLoading(true)
-    setAgentStepText('Analyzing resume background against requirements...')
+    setAgentStepText('Tailoring your resume…')
     setAgentSuccessMessage(null)
 
     // Save previous snapshot for undo
@@ -155,13 +148,6 @@ export default function Builder() {
       education: JSON.parse(JSON.stringify(education)),
       skills: [...skills],
     })
-
-    const t1 = setTimeout(() => {
-      setAgentStepText('Evaluating ATS keywords & role alignment...')
-    }, 900)
-    const t2 = setTimeout(() => {
-      setAgentStepText('Synthesizing technical metrics & rewriting bullets...')
-    }, 1800)
 
     try {
       const res = await agentApi.command(
@@ -185,16 +171,13 @@ export default function Builder() {
           setExperience(updatedExperience)
         }
 
-        setAgentExplanation(explanation || 'Successfully mutated and tailored resume fields.')
-        setAgentSource(res.source || 'gemini-live')
-        setAgentSuccessMessage('Resume tailored successfully! All fields and metrics updated in real-time.')
+        setAgentExplanation(explanation || 'Updated your title, summary, skills and experience bullets.')
+        setAgentSuccessMessage('Resume updated.')
       }
     } catch (err) {
       console.error('Agent Execution Error:', err)
-      setAgentSuccessMessage(`Agent error: ${err.message || 'Execution failed'}`)
+      setAgentSuccessMessage(`Could not update the resume: ${err.message || 'the request failed'}`)
     } finally {
-      clearTimeout(t1)
-      clearTimeout(t2)
       setAgentLoading(false)
     }
   }
@@ -206,7 +189,7 @@ export default function Builder() {
     setEducation(agentPreviousState.education)
     setSkills(agentPreviousState.skills)
     setAgentPreviousState(null)
-    setAgentSuccessMessage('Reverted back to previous resume version.')
+    setAgentSuccessMessage('Reverted to the previous version.')
     setAgentExplanation(null)
   }
 
@@ -284,13 +267,13 @@ export default function Builder() {
         if (projects && projects.length > 0) {
           const newExp = {
             id: Date.now(),
-            company: 'Open Source / GitHub Repositories',
-            role: 'Lead Architect & Maintainer',
+            company: 'Open-source projects',
+            role: 'Maintainer',
             start: '2023',
             end: 'Present',
             location: 'Remote',
             bullets: projects.slice(0, 3).map(p => 
-              `${p.title}: ${p.description} (Built with ${(p.technologies || []).join(', ')}) ★ ${p.stars || 0} stars`
+              `${p.title}: ${p.description} (Built with ${(p.technologies || []).join(', ')}; ${p.stars || 0} stars)`
             )
           }
           setExperience(prev => [newExp, ...prev])
@@ -404,14 +387,14 @@ export default function Builder() {
           {/* Agent Copilot Header Quick Button */}
           <button
             onClick={() => setActiveSection('agent')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
               activeSection === 'agent'
-                ? 'bg-purple-600 text-white border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.4)]'
-                : 'border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20'
+                ? 'bg-white text-black border-white font-semibold'
+                : 'border-white/20 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <Sparkles size={12} className="text-purple-300 animate-pulse" />
-            <span>Agent Copilot</span>
+            <PenLine size={12} />
+            <span>Tailor</span>
           </button>
         </div>
 
@@ -439,9 +422,10 @@ export default function Builder() {
                   </div>
                   <button
                     onClick={() => setShowAtsPopover(false)}
-                    className="text-white/40 hover:text-white text-xs cursor-pointer p-1"
+                    className="text-white/40 hover:text-white cursor-pointer p-1"
+                    aria-label="Close ATS breakdown"
                   >
-                    ✕
+                    <X size={14} />
                   </button>
                 </div>
 
@@ -531,14 +515,14 @@ export default function Builder() {
               onClick={() => setActiveSection('agent')}
               className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium w-full text-left transition-all cursor-pointer ${
                 activeSection === 'agent'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold shadow-lg'
-                  : 'border border-purple-500/30 bg-purple-500/10 text-purple-200 hover:bg-purple-500/20'
+                  ? 'bg-white text-black font-semibold'
+                  : 'border border-white/20 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
               }`}
             >
-              <Sparkles size={14} className="text-purple-300 shrink-0 animate-pulse" />
+              <PenLine size={14} className="shrink-0" />
               <div className="min-w-0">
-                <span className="block font-semibold leading-tight">Agent Copilot</span>
-                <span className="block text-[10px] text-purple-300/70 truncate">Autonomous Tailor</span>
+                <span className="block font-medium leading-tight">Tailor to a job</span>
+                <span className="block text-[10px] opacity-60 truncate">Rewrite for a posting</span>
               </div>
             </button>
           </div>
@@ -610,8 +594,8 @@ export default function Builder() {
                     disabled={fetchingGithub || !githubUser.trim()}
                     className="bg-white text-black px-6 py-3 rounded-xl font-semibold text-xs hover:bg-white/90 disabled:opacity-40 transition-all flex items-center gap-2 cursor-pointer shrink-0"
                   >
-                    {fetchingGithub ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                    <span>{fetchingGithub ? 'Importing...' : 'Import Profile'}</span>
+                    {fetchingGithub && <Loader2 size={15} className="animate-spin" />}
+                    <span>{fetchingGithub ? 'Importing...' : 'Import profile'}</span>
                   </button>
                 </form>
 
@@ -625,10 +609,10 @@ export default function Builder() {
                   <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-xs text-green-300 space-y-1">
                     <p className="font-semibold flex items-center gap-1.5">
                       <Check size={14} />
-                      Successfully imported {githubResult.reposCount} projects from GitHub!
+                      Imported {githubResult.reposCount} projects from GitHub.
                     </p>
                     <p className="text-white/60">
-                      Auto-detected languages: {githubResult.languages.join(', ')}. Check the preview on the right!
+                      Detected languages: {githubResult.languages.join(', ')}.
                     </p>
                   </div>
                 )}
@@ -641,20 +625,16 @@ export default function Builder() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               
               {/* Top Banner Card */}
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#120b1f] via-[#0d0914] to-[#070707] border border-purple-500/30 space-y-4 shadow-xl">
+              <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/10 space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shadow-inner shrink-0">
-                    <Sparkles size={20} className="animate-pulse" />
+                  <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white shrink-0">
+                    <PenLine size={20} />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-bold elsie-black text-white">Autonomous Agentic Copilot</h2>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-purple-400/40 bg-purple-500/20 text-purple-200 font-mono">
-                        Gemini 2.5
-                      </span>
-                    </div>
+                    <h2 className="text-xl font-bold elsie-black text-white">Tailor to a job description</h2>
                     <p className="text-xs text-white/60">
-                      Paste a target Job Description or give natural language commands. The agent directly rewrites summaries, injects required tech stacks, and calculates quantifiable metrics for your bullets.
+                      Paste a job posting, or describe the change you want. Your title, summary, skills and
+                      experience bullets are rewritten to match it, and you can undo it afterwards.
                     </p>
                   </div>
                 </div>
@@ -662,14 +642,11 @@ export default function Builder() {
 
               {/* Success / Explanation Banner with Undo */}
               {agentSuccessMessage && (
-                <div className="p-5 rounded-2xl bg-purple-950/40 border border-purple-500/40 space-y-3 animate-in fade-in">
+                <div className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/10 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span className="text-xs font-semibold text-purple-200">{agentSuccessMessage}</span>
-                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/10 text-white/70">
-                        {agentSource === 'gemini-live' ? 'AI Cloud' : 'Smart Engine'}
-                      </span>
+                      <CheckCircle size={14} className="text-emerald-400 shrink-0" />
+                      <span className="text-xs font-semibold text-white">{agentSuccessMessage}</span>
                     </div>
                     {agentPreviousState && (
                       <button
@@ -683,17 +660,17 @@ export default function Builder() {
                   </div>
                   {agentExplanation && (
                     <p className="text-xs text-white/80 bg-black/40 p-3 rounded-xl border border-white/5 leading-relaxed font-sans">
-                      💡 <span className="font-semibold text-white">Agent Insight:</span> {agentExplanation}
+                      <span className="font-semibold text-white">What changed: </span>{agentExplanation}
                     </p>
                   )}
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-purple-500/20 text-xs">
-                    <span className="text-white/60">Ready to defend these technical claims?</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-white/10 text-xs">
+                    <span className="text-white/60">Be ready to back up these claims in an interview.</span>
                     <Link
                       to="/interview"
-                      className="text-purple-300 hover:text-purple-200 font-semibold flex items-center gap-1.5 transition-colors"
+                      className="text-white hover:underline font-medium flex items-center gap-1.5 transition-colors"
                     >
-                      <span>Launch AI Viva &amp; Interview Prep</span>
+                      <span>Practise these answers</span>
                       <ArrowRight size={13} />
                     </Link>
                   </div>
@@ -703,11 +680,10 @@ export default function Builder() {
               {/* Quick Action Presets */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-                    <Wand2 size={13} className="text-purple-400" />
-                    1-Click Job Tailoring Presets
+                  <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
+                    Presets
                   </p>
-                  <span className="text-[11px] text-white/40">Click any preset to load & execute</span>
+                  <span className="text-[11px] text-white/40">Selecting one applies it straight away</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {AGENT_PROMPT_PRESETS.map((preset, idx) => (
@@ -719,13 +695,13 @@ export default function Builder() {
                         setAgentInstruction(preset.prompt)
                         handleExecuteAgent(preset.prompt)
                       }}
-                      className="text-left p-3.5 rounded-2xl border border-white/10 bg-[#0c0c0c] hover:border-purple-500/50 hover:bg-[#130f1c] transition-all cursor-pointer group disabled:opacity-50"
+                      className="text-left p-3.5 rounded-2xl border border-white/10 bg-[#0c0c0c] hover:border-white/30 hover:bg-[#111] transition-all cursor-pointer group disabled:opacity-50"
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+                        <span className="text-xs font-bold text-white">
                           {preset.title}
                         </span>
-                        <span className="text-[10px] text-white/30 group-hover:text-white/70">Run ⚡</span>
+                        <span className="text-[10px] text-white/30 group-hover:text-white/70">Apply</span>
                       </div>
                       <p className="text-[11px] text-white/50 group-hover:text-white/70 leading-relaxed">
                         {preset.desc}
@@ -739,7 +715,7 @@ export default function Builder() {
               <div className="p-6 rounded-2xl bg-[#0a0a0a] border border-white/10 space-y-4">
                 <div>
                   <label className="text-xs font-bold text-white uppercase tracking-wider block mb-1">
-                    Target Job Description / Agent Command
+                    Job description or instruction
                   </label>
                   <p className="text-xs text-white/50">
                     Paste the job requirements from LinkedIn, Indeed, or specify customizations like "Add Redis caching and 40% performance metric to my Stripe experience."
@@ -751,18 +727,18 @@ export default function Builder() {
                   value={agentInstruction}
                   onChange={(e) => setAgentInstruction(e.target.value)}
                   placeholder="Paste Job Description here (e.g. 'We are hiring a Senior Distributed Systems Engineer. Must have 4+ years with Go or Node, Docker, Kafka, PostgreSQL, and high availability systems.')..."
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-xs placeholder-white/20 focus:outline-none focus:border-purple-400 leading-relaxed"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-xs placeholder-white/20 focus:outline-none focus:border-white/40 leading-relaxed"
                 />
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-white/10">
                   <div className="text-xs text-white/50 flex items-center gap-2">
                     {agentLoading ? (
-                      <span className="flex items-center gap-2 text-purple-300">
+                      <span className="flex items-center gap-2 text-white/70">
                         <Loader2 size={13} className="animate-spin" />
                         <span>{agentStepText}</span>
                       </span>
                     ) : (
-                      <span>✨ Ready to tailor resume fields & recalculate live ATS score</span>
+                      <span>Changes apply to your resume and update the ATS score.</span>
                     )}
                   </div>
 
@@ -770,18 +746,15 @@ export default function Builder() {
                     type="button"
                     disabled={agentLoading || !agentInstruction.trim()}
                     onClick={() => handleExecuteAgent()}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs transition-all shadow-lg shadow-purple-600/30 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl bg-white text-black font-semibold text-xs transition-colors hover:bg-white/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {agentLoading ? (
                       <>
                         <Loader2 size={14} className="animate-spin" />
-                        <span>Synthesizing...</span>
+                        <span>Tailoring...</span>
                       </>
                     ) : (
-                      <>
-                        <Sparkles size={14} />
-                        <span>Execute Agent Tailoring</span>
-                      </>
+                      <span>Tailor resume</span>
                     )}
                   </button>
                 </div>

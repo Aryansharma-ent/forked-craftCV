@@ -6,9 +6,7 @@ import {
   LuStar as Star, 
   LuBriefcase as Briefcase, 
   LuGraduationCap as GraduationCap, 
-  LuSparkles as Sparkles, 
   LuLayers as Layers, 
-  LuTerminal as Terminal, 
   LuCpu as Cpu 
 } from 'react-icons/lu';
 import { FaGithub as Github, FaLinkedin as Linkedin, FaXTwitter as Twitter } from 'react-icons/fa6';
@@ -18,13 +16,6 @@ export const BentoTemplate = ({ portfolio }) => {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 p-4 sm:p-8 lg:p-12 font-sans selection:bg-blue-500 selection:text-white">
-      {/* Background ambient glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl animate-pulse [animation-delay:2s]"></div>
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl"></div>
-      </div>
-
       <div className="relative z-10 max-w-6xl mx-auto space-y-6">
         
         {/* Top Hero Bento Box */}
@@ -45,10 +36,6 @@ export const BentoTemplate = ({ portfolio }) => {
                   </div>
                 )}
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                    Available for Opportunities
-                  </div>
                   <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                     {personalInfo.fullName || 'Candidate Name'}
                   </h1>
@@ -97,11 +84,9 @@ export const BentoTemplate = ({ portfolio }) => {
           <div className="bg-neutral-900/80 border border-neutral-800/80 rounded-3xl p-6 backdrop-blur-md flex flex-col justify-between hover:border-neutral-700 transition-all">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
                   Connect
                 </h3>
-                <span className="text-xs text-neutral-500">Verified Links</span>
               </div>
               <div className="space-y-2.5">
                 {personalInfo.githubUsername && (
@@ -149,14 +134,6 @@ export const BentoTemplate = ({ portfolio }) => {
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/20 mt-4 text-center">
-              <p className="text-xs text-neutral-300 font-medium">
-                Want to evaluate my skills?
-              </p>
-              <p className="text-[11px] text-neutral-400 mt-0.5">
-                Click the <strong className="text-blue-400">Ask Recruiter AI</strong> button in the bottom right!
-              </p>
-            </div>
           </div>
         </div>
 

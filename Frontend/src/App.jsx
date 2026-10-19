@@ -6,7 +6,6 @@ import Templates from "./Pages/Templates";
 import Login from "./Pages/Login";
 import Signup from "./Pages/Signup";
 import Dashboard from "./Pages/Dashboard";
-import Pricing from "./Pages/Pricing";
 import NotFound from "./Pages/NotFound";
 import PortfolioView from "./Pages/PortfolioView";
 import InterviewPrep from "./Pages/InterviewPrep";
@@ -22,7 +21,6 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/pricing" element={<Pricing />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

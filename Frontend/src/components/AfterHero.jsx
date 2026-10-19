@@ -14,20 +14,20 @@ import {   FaUserDoctor,
   FaLaptopCode } from 'react-icons/fa6';
   import BlurText from './BlurText';
 
-const techLogos = [
-  { node: <FaUserDoctor />, title: "React", href: "https://react.dev" },
-  { node: <FaUserTie/>, title: "Next.js", href: "https://nextjs.org" },
-  { node: <FaCode />, title: "TypeScript", href: "https://www.typescriptlang.org" },
-  { node: <FaFlask />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaBriefcase />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaUserGraduate />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaChalkboardUser />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaPalette />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaGavel />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaChartLine />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaCamera />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaPenNib />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
-  { node: <FaLaptopCode />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
+const careerFields = [
+  { node: <FaUserDoctor />, title: "Healthcare" },
+  { node: <FaUserTie />, title: "Business" },
+  { node: <FaCode />, title: "Software" },
+  { node: <FaFlask />, title: "Research" },
+  { node: <FaBriefcase />, title: "Consulting" },
+  { node: <FaUserGraduate />, title: "Graduates" },
+  { node: <FaChalkboardUser />, title: "Teaching" },
+  { node: <FaPalette />, title: "Design" },
+  { node: <FaGavel />, title: "Law" },
+  { node: <FaChartLine />, title: "Finance" },
+  { node: <FaCamera />, title: "Photography" },
+  { node: <FaPenNib />, title: "Writing" },
+  { node: <FaLaptopCode />, title: "Engineering" },
 ];
 
 
@@ -57,7 +57,7 @@ function AfterHero() {
     <div style={{ height: '200px', position: 'relative', overflow: 'hidden'}} className='mt-40'>
       {/* Basic horizontal loop */}
       <LogoLoop
-        logos={techLogos}
+        logos={careerFields}
         speed={100}
         direction="left"
         logoHeight={110}
@@ -66,7 +66,7 @@ function AfterHero() {
         scaleOnHover
         fadeOut
         fadeOutColor="#000000"
-        ariaLabel="Technology partners"
+        ariaLabel="Career fields CraftCV has templates for"
       />
 
     </div>
