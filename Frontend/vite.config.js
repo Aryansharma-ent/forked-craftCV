@@ -25,7 +25,7 @@ function copyIndexTo404() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || (process.env.GITHUB_ACTIONS || process.env.GITHUB_PAGES ? '/CraftCV/' : '/'),
+  base: process.env.VITE_BASE_PATH || (process.env.GITHUB_ACTIONS || process.env.GITHUB_PAGES ? './' : '/'),
   plugins: [
     react(),
     tailwindcss(),
