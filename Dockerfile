@@ -17,6 +17,7 @@ RUN npm ci --include=dev
 # Copy the rest of the source, then build.
 COPY Frontend/ ./
 
+ENV VITE_BASE_PATH=/
 RUN npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────

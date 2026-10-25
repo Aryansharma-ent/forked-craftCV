@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: craftcv
+    runtime: static
+    rootDir: Frontend
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+      - type: rewrite
+        source: /health
+        destination: /health
