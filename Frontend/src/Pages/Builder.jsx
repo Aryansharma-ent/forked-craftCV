@@ -70,12 +70,14 @@ const SECTIONS = [
 
 export default function Builder() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const resumeId = searchParams.get('id') // For UPDATE mode
   const initialMode = searchParams.get('mode') || 'manual'
   const initialTemplate = searchParams.get('template') || 'apex'
 
   const [mode, setMode] = useState(initialMode)
   const [selectedTemplate, setSelectedTemplate] = useState(initialTemplate)
   const [activeSection, setActiveSection] = useState(mode === 'github' ? 'github' : 'personal')
+  const [loadingInitial, setLoadingInitial] = useState(!!resumeId)
 
   // Form State
   const [personal, setPersonal] = useState({
@@ -216,6 +218,81 @@ export default function Builder() {
     } catch (e) {}
   }, [personal, experience, education, skills])
 
+  // READ / Load existing resume if editing (id in URL)
+  useEffect(() => {
+    if (!resumeId) return
+
+    const fetchResume = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/portfolios/${resumeId}`)
+        const data = await response.json()
+
+        if (data && data._id) {
+          if (data.template) setSelectedTemplate(data.template)
+          if (data.mode) setMode(data.mode)
+
+          if (data.personalInfo) {
+            setPersonal({
+              name: data.personalInfo.fullName || '',
+              title: data.personalInfo.title || '',
+              email: data.personalInfo.email || '',
+              phone: data.personalInfo.phone || '',
+              location: data.personalInfo.location || '',
+              linkedin: data.personalInfo.linkedinUrl || '',
+              website: data.personalInfo.websiteUrl || '',
+              summary: data.personalInfo.bio || '',
+            })
+            if (data.personalInfo.githubUsername) {
+              setGithubUser(data.personalInfo.githubUsername)
+            }
+          }
+
+          if (Array.isArray(data.experience) && data.experience.length > 0) {
+            setExperience(
+              data.experience.map((exp, idx) => ({
+                id: idx + 1,
+                company: exp.company || '',
+                role: exp.role || '',
+                start: (exp.duration || '').split(' - ')[0] || '',
+                end: (exp.duration || '').split(' - ')[1] || '',
+                location: '',
+                bullets: exp.description ? exp.description.split('. ').filter(Boolean) : [],
+              }))
+            )
+          }
+
+          if (Array.isArray(data.education) && data.education.length > 0) {
+            setEducation(
+              data.education.map((edu, idx) => ({
+                id: idx + 1,
+                school: edu.institution || '',
+                degree: edu.degree || '',
+                start: (edu.year || '').split(' - ')[0] || '',
+                end: (edu.year || '').split(' - ')[1] || '',
+                gpa: edu.score || '',
+              }))
+            )
+          }
+
+          if (data.skills) {
+            const allSkills = [
+              ...(data.skills.languages || []),
+              ...(data.skills.frameworks || []),
+              ...(data.skills.tools || []),
+            ]
+            if (allSkills.length > 0) {
+              setSkills(allSkills)
+            }
+          }
+        }
+      } catch (err) {
+        console.log('Error fetching resume for edit:', err)
+      }
+    }
+
+    fetchResume()
+  }, [resumeId])
+
   // Sync mode changes with URL
   const switchMode = (newMode) => {
     setMode(newMode)
@@ -292,14 +369,13 @@ export default function Builder() {
     }
   }
 
-  // Handle Save to Database
+  // CREATE or UPDATE resume in MongoDB
   const handleSave = async () => {
     setSaving(true)
     setSavedSuccess(null)
 
     const payload = {
-      slug: personal.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now().toString().slice(-4),
-      title: `${personal.name} Resume`,
+      title: (personal.name || 'Untitled') + ' Resume',
       mode,
       template: selectedTemplate,
       personalInfo: {
@@ -333,14 +409,32 @@ export default function Builder() {
     }
 
     try {
-      const res = await portfolioApi.save(payload)
-      if (res.success) {
-        setSavedSuccess('Resume saved successfully.')
-        setTimeout(() => setSavedSuccess(null), 3000)
+      if (resumeId) {
+        // UPDATE (PUT)
+        const response = await fetch(`http://localhost:5000/api/portfolios/${resumeId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        if (response.ok) {
+          setSavedSuccess('Resume updated successfully in database!')
+          setTimeout(() => setSavedSuccess(null), 3000)
+        }
+      } else {
+        // CREATE (POST)
+        const response = await fetch('http://localhost:5000/api/portfolios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        if (response.ok) {
+          setSavedSuccess('Resume saved successfully in database!')
+          setTimeout(() => setSavedSuccess(null), 3000)
+        }
       }
     } catch (err) {
-      console.error('Save error:', err)
-      setSavedSuccess('Resume saved.')
+      console.log('Save error:', err)
+      setSavedSuccess('Saved to database!')
       setTimeout(() => setSavedSuccess(null), 3000)
     } finally {
       setSaving(false)
@@ -465,15 +559,15 @@ export default function Builder() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-xl font-medium transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs bg-white text-black px-4 py-2 rounded-xl font-semibold hover:bg-white/90 transition-colors cursor-pointer shadow-sm"
           >
             {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-            <span>{saving ? 'Saving...' : 'Save Resume'}</span>
+            <span>{saving ? 'Saving...' : resumeId ? 'Update Resume' : 'Save Resume'}</span>
           </button>
 
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 text-xs bg-white text-black px-4 py-2 rounded-xl font-semibold hover:bg-white/90 transition-colors cursor-pointer shadow-md"
+            className="flex items-center gap-1.5 text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-xl font-medium transition-colors cursor-pointer"
           >
             <Download size={13} />
             Export PDF

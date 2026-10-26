@@ -1,21 +1,10 @@
 import mongoose from 'mongoose';
 
-const ProjectSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, default: '' },
-  repoUrl: { type: String, default: '' },
-  liveDemo: { type: String, default: '' },
-  technologies: [{ type: String }],
-  stars: { type: Number, default: 0 },
-  pinned: { type: Boolean, default: false }
-}, { _id: false });
-
 const ExperienceSchema = new mongoose.Schema({
-  company: { type: String, required: true },
-  role: { type: String, required: true },
+  company: { type: String, default: '' },
+  role: { type: String, default: '' },
   duration: { type: String, default: '' },
   description: { type: String, default: '' },
-  achievements: [{ type: String }]
 }, { _id: false });
 
 const EducationSchema = new mongoose.Schema({
@@ -26,50 +15,25 @@ const EducationSchema = new mongoose.Schema({
 }, { _id: false });
 
 const PortfolioSchema = new mongoose.Schema({
-  userId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User',
-    default: null,
-    index: true
-  },
-  slug: { 
-    type: String, 
-    required: true, 
-    unique: true, 
-    index: true,
-    trim: true, 
-    lowercase: true 
-  },
-  title: { type: String, default: 'My Professional Portfolio' },
-  mode: { 
-    type: String, 
-    enum: ['manual', 'github'], 
-    default: 'manual' 
-  },
-  template: { 
-    type: String, 
-    enum: ['bento', 'terminal', 'executive'], 
-    default: 'bento' 
-  },
+  title: { type: String, default: 'My Resume' },
+  template: { type: String, default: 'apex' },
+  mode: { type: String, default: 'manual' },
   personalInfo: {
-    fullName: { type: String, required: true },
-    title: { type: String, default: 'Full Stack Software Engineer' },
-    bio: { type: String, default: '' },
+    fullName: { type: String, default: '' },
+    title: { type: String, default: '' },
     email: { type: String, default: '' },
     phone: { type: String, default: '' },
     location: { type: String, default: '' },
-    avatarUrl: { type: String, default: '' },
-    githubUsername: { type: String, default: '' },
-    linkedinUrl: { type: String, default: '' },
-    twitterUrl: { type: String, default: '' },
+    bio: { type: String, default: '' },
     websiteUrl: { type: String, default: '' },
+    linkedinUrl: { type: String, default: '' },
+    githubUsername: { type: String, default: '' },
   },
   skills: {
     languages: [{ type: String }],
     frameworks: [{ type: String }],
     tools: [{ type: String }]
   },
-  projects: [ProjectSchema],
   experience: [ExperienceSchema],
   education: [EducationSchema]
 }, {
