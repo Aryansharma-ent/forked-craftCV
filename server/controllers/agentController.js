@@ -55,19 +55,26 @@ You MUST respond strictly with valid JSON conforming to this format (no markdown
 }`;
 
         let rawText = null;
-        for (const model of ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']) {
+        for (const model of ['gemini-3-flash-preview', 'gemini-flash-lite-latest']) {
           try {
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
             const response = await axios.post(
               geminiUrl,
               {
                 contents: [{ parts: [{ text: systemPrompt }] }],
                 generationConfig: {
                   responseMimeType: 'application/json',
-                  temperature: 0.2
+                  temperature: 0.2,
+                  thinkingConfig: { thinkingBudget: 0 }
                 }
               },
-              { timeout: 20000 }
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-goog-api-key': effectiveApiKey
+                },
+                timeout: 15000
+              }
             );
 
             rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -238,19 +245,26 @@ You MUST respond strictly with valid JSON conforming to this schema (no markdown
           });
         }
 
-        for (const model of ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']) {
+        for (const model of ['gemini-3-flash-preview', 'gemini-flash-lite-latest']) {
           try {
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
             const response = await axios.post(
               geminiUrl,
               {
                 contents: [{ parts }],
                 generationConfig: {
                   responseMimeType: 'application/json',
-                  temperature: 0.3
+                  temperature: 0.3,
+                  thinkingConfig: { thinkingBudget: 0 }
                 }
               },
-              { timeout: 25000 }
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-goog-api-key': effectiveApiKey
+                },
+                timeout: 15000
+              }
             );
 
             const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -272,7 +286,8 @@ You MUST respond strictly with valid JSON conforming to this schema (no markdown
     }
 
     // Intelligent Offline Fallback for Interview Questions
-    const topSkills = (skills && skills.length > 0 ? skills.slice(0, 3) : ['Node.js', 'React', 'MongoDB']).join(', ');
+    const resumeSkills = resumeData?.skills || [];
+    const topSkills = (resumeSkills.length > 0 ? resumeSkills.slice(0, 3) : ['Node.js', 'React', 'MongoDB']).join(', ');
     const fallbackQuestions = [
       {
         id: 1,
@@ -354,19 +369,26 @@ You MUST respond strictly with valid JSON conforming to this schema (no markdown
   "vivaTip": "string"
 }`;
 
-        for (const model of ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite']) {
+        for (const model of ['gemini-3-flash-preview', 'gemini-flash-lite-latest']) {
           try {
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveApiKey}`;
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
             const response = await axios.post(
               geminiUrl,
               {
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                   responseMimeType: 'application/json',
-                  temperature: 0.2
+                  temperature: 0.2,
+                  thinkingConfig: { thinkingBudget: 0 }
                 }
               },
-              { timeout: 20000 }
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-goog-api-key': effectiveApiKey
+                },
+                timeout: 15000
+              }
             );
 
             const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;

@@ -2,27 +2,30 @@ import { useRef } from "react"
 import { Link } from 'react-router'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { LuArrowDown as ArrowDown } from "react-icons/lu"
+import featureTemplates from '../assets/feature-templates.png'
+import featureTailor from '../assets/feature-tailor.png'
+import featureExport from '../assets/feature-export.png'
 
 const sections = [
     {
         id: 1,
         title: "Pick a Template That Fits.",
         description: "Choose from a curated collection of professionally designed resume templates — crafted to look sharp in the eyes of hiring managers and pass ATS filters without compromise.",
-        imageUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&q=80',
+        imageUrl: featureTemplates,
         reverse: false
     },
     {
         id: 2,
         title: "Built for Every Career Path.",
         description: "Whether you're an engineer, designer, product manager, or recent graduate — CraftCV gives you layouts and sections tailored to your field. No generic, one-size-fits-all approach.",
-        imageUrl: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80',
+        imageUrl: featureTailor,
         reverse: true
     },
     {
         id: 3,
         title: "Export and Apply, Instantly.",
         description: "When you're ready, download your resume as a clean, print-ready PDF. Share it directly with recruiters or attach it to any job application — formatted perfectly every time.",
-        imageUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=800&q=80',
+        imageUrl: featureExport,
         reverse: false
     }
 ]
@@ -62,7 +65,7 @@ const ParallaxSectionItem = ({ section }) => {
             >
                 <img
                     src={section.imageUrl}
-                    className="size-80 object-cover"
+                    className="w-[340px] md:w-[460px] max-h-[360px] object-cover rounded-2xl border border-white/15 shadow-2xl bg-[#0a0a0a]"
                     alt={`Section ${section.id}`}
                 />
             </motion.div>

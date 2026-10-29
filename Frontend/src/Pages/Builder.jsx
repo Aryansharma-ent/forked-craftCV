@@ -29,6 +29,10 @@ import resume3 from '../assets/resume3.png'
 import resume2 from '../assets/resume2.png'
 import resume4 from '../assets/resume4.png'
 import resume from '../assets/resume.png'
+import ApexTemplate    from '../components/resume-templates/ApexTemplate'
+import NovaTemplate    from '../components/resume-templates/NovaTemplate'
+import SlateTemplate   from '../components/resume-templates/SlateTemplate'
+import MinimalTemplate from '../components/resume-templates/MinimalTemplate'
 
 const AGENT_PROMPT_PRESETS = [
   {
@@ -446,7 +450,24 @@ export default function Builder() {
   }
 
   return (
-    <div className="bg-black min-h-screen text-white flex flex-col font-sans">
+    <>
+      {/* Print-Only Dedicated Resume View */}
+      <div id="resume-print-area" className="hidden print:block w-full">
+        {selectedTemplate === 'apex' && (
+          <ApexTemplate personal={personal} experience={experience} education={education} skills={skills} />
+        )}
+        {selectedTemplate === 'nova' && (
+          <NovaTemplate personal={personal} experience={experience} education={education} skills={skills} />
+        )}
+        {selectedTemplate === 'slate' && (
+          <SlateTemplate personal={personal} experience={experience} education={education} skills={skills} />
+        )}
+        {selectedTemplate === 'minimal' && (
+          <MinimalTemplate personal={personal} experience={experience} education={education} skills={skills} />
+        )}
+      </div>
+
+      <div className="bg-black min-h-screen text-white flex flex-col font-sans print:hidden">
 
       {/* Top Header */}
       <header className="flex items-center justify-between px-6 h-16 border-b border-white/10 bg-black sticky top-0 z-40">
@@ -1097,91 +1118,24 @@ export default function Builder() {
 
           <div className="flex-1 overflow-y-auto p-6">
             <div className="transform scale-[0.74] origin-top-left w-[135%]">
-              {/* Clean Styled Resume Sheet */}
-              <div className="bg-white rounded-xl shadow-2xl overflow-hidden text-black font-serif">
-                <div className="bg-gray-950 text-white px-8 py-7">
-                  <h1 className="text-2xl font-bold tracking-tight">{personal.name}</h1>
-                  <p className="text-sm text-gray-300 mt-0.5">{personal.title}</p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-gray-400">
-                    {personal.email && <span>{personal.email}</span>}
-                    {personal.phone && <span>{personal.phone}</span>}
-                    {personal.location && <span>{personal.location}</span>}
-                    {personal.website && <span>{personal.website}</span>}
-                  </div>
-                </div>
-
-                <div className="px-8 py-6 space-y-5 text-[11px] leading-relaxed">
-                  {personal.summary && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 mb-2 font-sans font-semibold">
-                        Summary
-                      </p>
-                      <p className="text-gray-700">{personal.summary}</p>
-                    </div>
-                  )}
-
-                  {experience.length > 0 && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 mb-3 font-sans font-semibold">
-                        Experience & Highlights
-                      </p>
-                      <div className="space-y-4">
-                        {experience.map((exp) => (
-                          <div key={exp.id}>
-                            <div className="flex justify-between items-baseline">
-                              <p className="font-bold text-gray-900 text-xs">{exp.role}</p>
-                              <p className="text-gray-400 text-[10px]">{exp.start} – {exp.end}</p>
-                            </div>
-                            <p className="text-gray-500">{exp.company} {exp.location ? `· ${exp.location}` : ''}</p>
-                            <ul className="mt-1.5 space-y-1 list-disc list-inside text-gray-700">
-                              {exp.bullets.map((b, i) => (
-                                <li key={i}>{b}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {education.length > 0 && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 mb-2 font-sans font-semibold">
-                        Education
-                      </p>
-                      {education.map((edu) => (
-                        <div key={edu.id} className="flex justify-between items-baseline">
-                          <div>
-                            <p className="font-bold text-gray-900 text-xs">{edu.degree}</p>
-                            <p className="text-gray-500">{edu.school}</p>
-                          </div>
-                          <p className="text-gray-400 text-[10px]">{edu.start} – {edu.end}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {skills.length > 0 && (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-1 mb-2 font-sans font-semibold">
-                        Skills
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {skills.map((s, i) => (
-                          <span key={i} className="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full text-[10px]">
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              {selectedTemplate === 'apex' && (
+                <ApexTemplate personal={personal} experience={experience} education={education} skills={skills} />
+              )}
+              {selectedTemplate === 'nova' && (
+                <NovaTemplate personal={personal} experience={experience} education={education} skills={skills} />
+              )}
+              {selectedTemplate === 'slate' && (
+                <SlateTemplate personal={personal} experience={experience} education={education} skills={skills} />
+              )}
+              {selectedTemplate === 'minimal' && (
+                <MinimalTemplate personal={personal} experience={experience} education={education} skills={skills} />
+              )}
             </div>
           </div>
         </aside>
 
       </div>
     </div>
+    </>
   )
 }
